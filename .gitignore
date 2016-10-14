@@ -34,6 +34,10 @@
 # eclipse project file
 .cproject
 .project
+.settings
+.autotools
+
+# Clion
 .idea
 CMakeLists.txt
 
@@ -42,3 +46,8 @@ output/
 lnkfeedback.txt
 core/SIM808M32_EMBEDDEDAT/SIM808M32_EAT.cfg
 core/SIM808M32_EMBEDDEDAT/app
+core/SIM808M32_EMBEDDEDAT/app_release
+
+# VS Code settings
+.vscode/
+
