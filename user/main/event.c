@@ -29,6 +29,7 @@
 #include "response.h"
 #include "msg_queue.h"
 #include "mem.h"
+#include "version.h"
 
 typedef int (*EVENT_FUNC)(const EatEvent_st* event);
 typedef struct
@@ -376,6 +377,36 @@ static int threadCmd_Batteryget(const MSG_THREAD* msg)
     return 0;
 }
 
+/*
+*fun: receive msg from Battery_Thread and send login msg to server
+*/
+static int threadCmd_login(const MSG_THREAD* msg)
+{
+    BATTERY_GET_VALUE* msg_data = (BATTERY_GET_VALUE*) msg->data;
+
+    MSG_LOGIN_REQ_NEW* req = alloc_msg(CMD_LOGIN, sizeof(MSG_LOGIN_REQ_NEW));
+    u8 imei[MAX_IMEI_LENGTH] = {0};
+
+    if (!msg)
+    {
+        LOG_ERROR("alloc login message failed!");
+        return -1;
+    }
+
+    req->version = htonl(VERSION_NUM);
+
+    eat_get_imei(imei, MAX_IMEI_LENGTH);
+
+    memcpy(req->IMEI, imei, MAX_IMEI_LENGTH);
+
+    req->voltage = msg_data->voltage;
+
+    LOG_DEBUG("send login message.");
+
+    socket_sendDataDirectly(req, sizeof(MSG_LOGIN_REQ_NEW));
+    return 0;
+}
+
 
 
 /*
@@ -573,6 +604,7 @@ static THREAD_MSG_PROC msgProcs[] =
         {CMD_THREAD_BATTERY_GET, threadCmd_Batteryget},
         {CMD_THREAD_BATTERY_INFO, threadCmd_DeviceInfo},
         {CMD_THREAD_GPSHDOP, threadCmd_GPSHdop},
+        {CMD_THREAD_BATTERY_VALUE, threadCmd_login},
 };
 
 static int event_threadMsg(const EatEvent_st* event)

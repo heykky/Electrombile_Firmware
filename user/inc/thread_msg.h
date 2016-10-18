@@ -23,6 +23,7 @@ enum CMD
     CMD_THREAD_BATTERY,
     CMD_THREAD_BATTERY_INFO,
     CMD_THREAD_BATTERY_GET,
+    CMD_THREAD_BATTERY_VALUE,
 };
 
 
@@ -106,6 +107,12 @@ typedef struct
     char miles;
     int managerSeq;
 }__attribute__((__packed__))BATTERY_GET_INFO;
+
+typedef struct
+{
+    char voltage;
+}__attribute__((__packed__))BATTERY_GET_VALUE;
+
 
 typedef struct
 {

@@ -21,6 +21,7 @@
 #include "modem.h"
 #include "response.h"
 #include "itinerary.h"
+#include "thread.h"
 
 int cmd_Login(void)
 {
@@ -44,6 +45,15 @@ int cmd_Login(void)
     socket_sendDataDirectly(msg, sizeof(MSG_LOGIN_REQ));
 
     return 0;
+}
+
+
+int cmd_Login_before(void)
+{
+    int msgLen = sizeof(MSG_THREAD);
+    MSG_THREAD* msg = msg = allocMsg(msgLen);
+    msg->cmd = CMD_THREAD_BATTERY_VALUE;
+    return sendMsg(THREAD_BATTERY, msg, msgLen);
 }
 
 int cmd_SimInfo(char* buf)

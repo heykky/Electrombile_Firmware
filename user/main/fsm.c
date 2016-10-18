@@ -202,7 +202,7 @@ static int action_onGprsAttached(void)
         break;
 
     case ERR_SOCKET_CONNECTED:
-        cmd_Login();
+        cmd_Login_before();
         fsm_trans(STATE_WAIT_LOGIN);
         break;
 
@@ -236,7 +236,7 @@ static int action_onBearHold(void)
         break;
 
     case ERR_SOCKET_CONNECTED:
-        cmd_Login();
+        cmd_Login_before();
         fsm_trans(STATE_WAIT_LOGIN);
 
         break;
@@ -256,7 +256,7 @@ static int action_onBearDeactivated(void)
 
 static int action_onSocketConnected(void)
 {
-    cmd_Login();
+    cmd_Login_before();
 
     fsm_trans(STATE_WAIT_LOGIN);
 
@@ -341,7 +341,7 @@ static int action_waitloginOnLoop(void)
     if (login_times++ > 5)
     {
         login_times = 0;
-        cmd_Login();
+        cmd_Login_before();
     }
 
     return 0;

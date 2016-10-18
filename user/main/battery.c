@@ -37,7 +37,7 @@ enum
 #define BATTERY_TIMER_PEROID (10*60*1000)   //10mins check once
 
 
-#define ADvalue_2_Realvalue(x) x*103/3/1000.f //unit mV, 3K & 100k divider
+#define ADvalue_2_Realvalue(x) (x*103/3/1000.f) //unit mV, 3K & 100k divider
 #define Voltage2Percent(x) exp((x-37.873)/2.7927)
 
 static u32 BatteryVoltage[MAX_VLOTAGE_NUM] = {0};
@@ -315,6 +315,31 @@ static int battery_get_msg(const MSG_THREAD* thread_msg)
 }
 
 
+static int battery_get_value(const MSG_THREAD* thread_msg)
+{
+    u8 msgLen = sizeof(MSG_THREAD) + sizeof(BATTERY_GET_VALUE);
+    MSG_THREAD *msg = allocMsg(msgLen);
+    BATTERY_GET_VALUE *value = (BATTERY_GET_VALUE*)msg->data;
+    u32 vot;
+
+    if (!msg)
+    {
+        LOG_ERROR("alloc battery value msg failed!");
+        return EAT_FALSE;
+    }
+
+    msg->cmd = thread_msg->cmd;
+    msg->length = sizeof(BATTERY_GET_VALUE);
+
+    value = (BATTERY_GET_VALUE*)msg->data;
+    vot = battery_get_Voltage();
+    value->voltage = (char)(ADvalue_2_Realvalue(vot) + 0.5);
+    LOG_DEBUG("send battery value to Main_thread:%d",value->voltage);
+    sendMsg(THREAD_MAIN, msg, msgLen);
+    return 0;
+
+}
+
 
 /*
 *fun:event adc proc
@@ -386,6 +411,10 @@ void app_battery_thread(void *data)
 
                     case CMD_THREAD_BATTERY_GET:
                         battery_get_msg(msg);
+                        break;
+
+                    case CMD_THREAD_BATTERY_VALUE:
+                        battery_get_value(msg);
                         break;
 
                     default:

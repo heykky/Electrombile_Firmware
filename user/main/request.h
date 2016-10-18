@@ -11,6 +11,7 @@
 #include "protocol.h"
 
 int cmd_Login(void);
+int cmd_Login_before(void);
 int cmd_SMS(char number[], char type, char smsLen, char content[]);
 void cmd_Heartbeat(void);
 int cmd_Seek(unsigned int value);
