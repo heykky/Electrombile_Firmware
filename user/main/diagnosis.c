@@ -33,7 +33,7 @@ static eat_bool diag_batterCheck(void)
 
     //电池电压介于[28v, 85v]之间
     //FIXME: 根据分压计算区间
-    if (voltage < Realvalue_2_ADvalue(28) || voltage > Realvalue_2_ADvalue(85))// while testing, 10 and 85 is OK
+    if (voltage < Realvalue_2_ADvalue(28))// while testing, 10 and 85 is OK
     {
         LOG_ERROR("battery voltage check failed: %d", voltage);
         return EAT_FALSE;
@@ -98,7 +98,7 @@ static eat_bool diag_433Check(void)
     u32 voltage = diag_433_get();
 
     //检查433信号强度是否在[100mv, 1000mv]之间
-    if (voltage < 100 || voltage > 1000)
+    if (voltage < 100 || voltage > 1500)
     {
         LOG_ERROR("433 signal quality not enough: %d", voltage);
         return EAT_FALSE;
