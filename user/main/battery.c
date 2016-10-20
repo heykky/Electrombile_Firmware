@@ -149,7 +149,7 @@ static u8 battery_getType_percent(u32 voltage)
 
     percent = (int)Voltage2Percent(ADvalue_2_Realvalue(voltage));
     percent = percent>MAX_PERCENT_NUM?MAX_PERCENT_NUM:percent;
-    LOG_DEBUG("battery_getType_percent:%d,%d",percent,battery_type);
+
     if(percent == 0)                //if percent == 0,mostly judged error,set type to default
     {
         set_battery_type(BATTERY_TYPENULL);
@@ -331,7 +331,6 @@ void app_battery_thread(void *data)
                 switch (event.data.timer.timer_id)
                 {
                     case TIMER_BATTERY_CHECK:
-                        LOG_ERROR("timer TIMER_BATTERY_CHECK expire!");
                         if(!Vibration_isMoved())
                         {
                             battery_alarm_handler();
