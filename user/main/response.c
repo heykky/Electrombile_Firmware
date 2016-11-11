@@ -25,22 +25,26 @@
 #include "setting.h"
 #include "battery.h"
 #include "seek.h"
-#include "itinerary.h"
 #include "request.h"
 #include "timer.h"
 #include "msg_queue.h"
 #include "diagnosis.h"
 #include "mem.h"
 #include "modem.h"
-
+#include "data.h"
 
 int cmd_Login_rsp(const void* msg)
 {
     LOG_DEBUG("get login respond.");
 
-    cmd_Itinerary_check();//if logined , check if there is a itinerary exist, if Y send it
-
     fsm_run(EVT_LOGINED);
+
+    return 0;
+}
+
+int cmd_Ping_rsp(const void* msg)
+{
+    LOG_DEBUG("get ping respond.");
 
     return 0;
 }
@@ -53,26 +57,6 @@ int cmd_SimInfo_rsp(const void* msg)
 
     return 0;
 }
-
-
-int cmd_Ping_rsp(const void* msg)
-{
-    LOG_DEBUG("get ping respond.");
-
-    return 0;
-}
-
-int cmd_Itinerary_rsp(const void* msg)
-{
-    LOG_DEBUG("get ititerary respond.");
-
-    msg_ack(msg);
-
-    itinerary_delete();
-
-    return 0;
-}
-
 
 int cmd_Alarm_rsp(const void* msg)
 {
@@ -251,33 +235,41 @@ int cmd_AutodefendPeriodGet_rsp(const void* msg)
 
 int cmd_Battery_rsp(const void* msg)
 {
-    u8 msgLen = sizeof(MSG_THREAD);
-    MSG_THREAD* msg_battery = allocMsg(msgLen);
+    MSG_BATTERY_RSP* rsp = alloc_msg(CMD_BATTERY, sizeof(MSG_BATTERY_RSP));
+    if (!rsp)
+    {
+        LOG_ERROR("alloc battery_msg rsp message failed!");
+        return -1;
+    }
+    rsp->percent = battery_getPercent();
+    rsp->miles = 0;
 
-    msg_battery->cmd = CMD_THREAD_BATTERY;
-    msg_battery->length = 0;
+    LOG_DEBUG("send battery msg: %d",battery_getPercent());
 
-    LOG_DEBUG("send CMD_THREAD_BATTERY to THREAD_BATTERY.");
-    sendMsg(THREAD_BATTERY, msg_battery, msgLen);
+    socket_sendDataDirectly(rsp, sizeof(MSG_BATTERY_RSP));
 
     return 0;
 }
 
-
 int cmd_GetBattery_rsp(const void* msg)
 {
-    u8 msgLen = sizeof(MSG_THREAD) + sizeof(MANAGERSEQ_INFO);
+    u8 msgLen = 0;
+    char buf[MAX_DEBUG_BUF_LEN] = {0};
+    MSG_GET_GPS_RSP* battery_msg = NULL;
     MSG_GET_HEADER *server_msg = (MSG_GET_HEADER*)msg;
-    MANAGERSEQ_INFO *data = NULL;
-    MSG_THREAD* m = allocMsg(msgLen);
 
-    m->cmd = CMD_THREAD_BATTERY_GET;
-    m->length = sizeof(MANAGERSEQ_INFO);
-    data = (MANAGERSEQ_INFO*)m->data;
-    data->managerSeq = server_msg->managerSeq;
+    snprintf(buf,MAX_DEBUG_BUF_LEN,"Volatge: %d, percent: %d, miles: %d",battery_getVoltage(),battery_getPercent(),0);
 
-    LOG_DEBUG("send CMD_THREAD_BATTERY_GET to THREAD_GPS.");
-    sendMsg(THREAD_BATTERY, m, msgLen);
+    msgLen = sizeof(MSG_GET_HEADER) + strlen(buf) + 1;
+    battery_msg = alloc_msg(CMD_GET_BATTERY,msgLen);
+    if (!battery_msg)
+    {
+        LOG_ERROR("alloc LogInfo rsp message failed!");
+        return -1;
+    }
+    battery_msg->managerSeq = server_msg->managerSeq;
+    strncpy(battery_msg->data,buf,strlen(buf)+1);
+    socket_sendDataDirectly(battery_msg, msgLen);
 
     return 0;
 }
@@ -717,15 +709,69 @@ int cmd_UpgradeEnd_rsp(const void* msg)
 
 int cmd_DeviceInfo_rsp(const void* msg)
 {
-    u8 msgLen = sizeof(MSG_THREAD);
-    MSG_THREAD* msg_battery = allocMsg(msgLen);
+    int msgLen = 0;
+    MSG_DEVICE_INFO_GET_RSP* rsp = NULL;
+    LOCAL_GPS* local_gps = gps_get_last();
 
-    msg_battery->cmd = CMD_THREAD_BATTERY_INFO;
-    msg_battery->length = 0;
+    if(local_gps->isGps)    //becaus of auto malloc ram,cant use alloc_rspMsg
+    {
+        msgLen = sizeof(MSG_DEVICE_INFO_GET_RSP);
+    }
+    else
+    {
+        msgLen = sizeof(MSG_DEVICE_INFO_GET_RSP)-sizeof(GPS) + 4*sizeof(short);
+    }
 
-    LOG_DEBUG("send CMD_THREAD_BATTERY to THREAD_BATTERY.");
-    sendMsg(THREAD_BATTERY, msg_battery, msgLen);
+    rsp = alloc_msg(CMD_DEVICE_INFO_GET, msgLen);
+    if (!rsp)
+    {
+        LOG_ERROR("alloc defend rsp message failed!");
+        return -1;
+    }
 
+    rsp->isGps = local_gps->isGps;
+    rsp->autolock = setting.isAutodefendFixed;
+    rsp->autoperiod = setting.autodefendPeriod;
+    rsp->defend = setting.isVibrateFixed;
+    rsp->percent = battery_getPercent();
+    rsp->miles = 0;
+
+    if(rsp->isGps)
+    {
+        rsp->gps.timestamp = htonl(local_gps->gps.timestamp);
+        rsp->gps.latitude = local_gps->gps.latitude;
+        rsp->gps.longitude = local_gps->gps.longitude;
+        rsp->gps.speed = local_gps->gps.speed;
+        rsp->gps.course = htons(local_gps->gps.course);
+    }
+    else
+    {
+        rsp->mcc = htons(local_gps->cellInfo.mcc);
+        rsp->mnc = htons(local_gps->cellInfo.mnc);
+        rsp->lac = htons(local_gps->cellInfo.cell[0].lac);
+        rsp->cid = htons(local_gps->cellInfo.cell[0].cellid);
+    }
+
+    socket_sendDataDirectly(rsp,msgLen);
+    return 0;
+}
+
+int cmd_SetBatteryType_rsp(const void* msg)
+{
+    MSG_SET_BATTERY_TYPE* req = (MSG_SET_BATTERY_TYPE*)msg;
+    MSG_SET_BATTERY_TYPE_RSP* rsp = NULL;
+
+    LOG_DEBUG("set battery type :%d",req->type);
+    rsp = alloc_rspMsg(msg);
+    if (!rsp)
+    {
+        LOG_ERROR("alloc reboot rsp message failed!");
+        return -1;
+    }
+
+    set_UserBatteryTpye(req->type);
+
+    socket_sendDataDirectly(rsp, sizeof(MSG_SET_BATTERY_TYPE_RSP));
     return 0;
 }
 

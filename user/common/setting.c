@@ -56,9 +56,10 @@ SETTING setting;
 #define TAG_PERIOD  "period"
 
 #define TAG_BATTERY  "battery"
+#define TAG_ISUSERTYPE "isusertype"
 #define TAG_BATTERYTYPE "batterytype"
-#define TAG_BATTERY_TEST_TYPE "battery_test_type"
-#define TAG_BATTERY_FLAG "battery_flag"
+#define TAG_BATTERYTYPE_JUDGING "batterytype_judging"
+#define TAG_IS_BATTERYTYPE_JUDGING "isbatterytype_judging"
 
 
 //the setting file format is as follow
@@ -93,10 +94,9 @@ static int setting_changeServer(const unsigned char* cmdString, unsigned short l
     }
 
     count = sscanf(address, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
-    if (4 == count)   //domainORip is ip
+    if (4 == count)   // ip
     {
-        //validity check
-        if (ip[0] <= 255 && ip[1] <= 255 && ip[2] <= 255 && ip[3] <= 255)
+        if (ip[0] <= 255 && ip[1] <= 255 && ip[2] <= 255 && ip[3] <= 255)//validity check
         {
             setting.addr_type = ADDR_TYPE_IP;
             setting.ipaddr[0] = (u8) ip[0];
@@ -113,7 +113,7 @@ static int setting_changeServer(const unsigned char* cmdString, unsigned short l
             return -1;
         }
     }
-    else
+    else            // domain
     {
         setting.addr_type = ADDR_TYPE_DOMAIN;
         strncpy(setting.domain, address, MAX_DOMAIN_NAME_LEN);
@@ -133,11 +133,9 @@ static void setting_initial(void)
 
     LOG_DEBUG("setting initial to default value.");
 
-    //initial the cJSON memory hook
-    cJSON_InitHooks(&mem_hooks);
+    cJSON_InitHooks(&mem_hooks);//initial the cJSON memory hook
 
-    //register the debug command
-    regist_cmd(CMD_STRING_SERVER, setting_changeServer);
+    regist_cmd(CMD_STRING_SERVER, setting_changeServer);//register the debug command
 
     /* Server configuration */
 #if 1
@@ -168,9 +166,10 @@ static void setting_initial(void)
     setting.autodefendPeriod = 5;
 
     //Baterry Type
-    setting.BaterryType = NULL;    //Initial default NULL,wait for certainly judge type
-    setting.Baterry_Test_Type = EAT_FALSE;
-    setting.Baterry_Flag = EAT_FALSE;
+    setting.isUserType = EAT_FALSE;
+    setting.BatteryType = NULL;    //Initial default NULL,wait for certainly judge type
+    setting.BaterryType_Judging = NULL;
+    setting.isBatteryJudging = EAT_FALSE;
 
     return;
 }
@@ -207,31 +206,43 @@ void set_autodefend_period(unsigned char period)
     setting_save();
 }
 
+void set_UserBatteryTpye(u8 batteryType)
+{
+    setting.isUserType = EAT_TRUE;
+    setting.BatteryType = batteryType;
+    setting_save();
+}
+
+eat_bool isUserBatteryTpye(void)
+{
+    return setting.isUserType;
+}
+
 unsigned char get_battery_type(void)
 {
-    return setting.BaterryType;
+    return setting.BatteryType;
 }
 
 void set_battery_type(unsigned char batterytype)
 {
-    setting.BaterryType = batterytype;
+    setting.BatteryType = batterytype;
     setting_save();
 }
 
-unsigned char get_battery_test_type(void)
+unsigned char get_batterytype_Judging(void)
 {
-    return setting.Baterry_Test_Type;
+    return setting.BaterryType_Judging;
 }
 
-eat_bool get_battery_flag(void)
+eat_bool get_battery_isJudging(void)
 {
-    return setting.Baterry_Flag;
+    return setting.isBatteryJudging;
 }
 
-void set_battery_flag(eat_bool flag, unsigned char test_type)
+void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype)
 {
-    setting.Baterry_Test_Type = test_type;
-    setting.Baterry_Flag = flag;
+    setting.BaterryType_Judging = baterrytype;
+    setting.isBatteryJudging = isBatteryJudging;
     setting_save();
 }
 
@@ -374,11 +385,12 @@ eat_bool setting_restore(void)
         cJSON_Delete(conf);
         return EAT_FALSE;
     }
-    setting.BaterryType = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE)->valueint;
-    setting.Baterry_Test_Type = cJSON_GetObjectItem(battery, TAG_BATTERY_TEST_TYPE)->valueint;
-    setting.Baterry_Flag = cJSON_GetObjectItem(battery, TAG_BATTERY_FLAG)->valueint ? EAT_TRUE : EAT_FALSE;
+    setting.isUserType = cJSON_GetObjectItem(battery, TAG_ISUSERTYPE)->valueint ? EAT_TRUE : EAT_FALSE;
+    setting.BatteryType = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE)->valueint;
+    setting.BaterryType_Judging = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE_JUDGING)->valueint;
+    setting.isBatteryJudging = cJSON_GetObjectItem(battery, TAG_IS_BATTERYTYPE_JUDGING)->valueint ? EAT_TRUE : EAT_FALSE;
 
-    LOG_DEBUG("BATTERY TYPE IS %d", setting.BaterryType);
+    LOG_DEBUG("BATTERY TYPE IS %d", setting.BatteryType);
 
     free(buf);
     eat_fs_Close(fh);
@@ -421,9 +433,10 @@ eat_bool setting_save(void)
 
     cJSON_AddItemToObject(root, TAG_AUTOLOCK, autolock);
 
-    cJSON_AddNumberToObject(battery, TAG_BATTERYTYPE, setting.BaterryType);
-    cJSON_AddNumberToObject(battery, TAG_BATTERY_TEST_TYPE, setting.Baterry_Test_Type);
-    cJSON_AddNumberToObject(battery, TAG_BATTERY_FLAG, setting.Baterry_Flag);
+    cJSON_AddNumberToObject(battery, TAG_ISUSERTYPE, setting.isUserType);
+    cJSON_AddNumberToObject(battery, TAG_BATTERYTYPE, setting.BatteryType);
+    cJSON_AddNumberToObject(battery, TAG_BATTERYTYPE_JUDGING, setting.BaterryType_Judging);
+    cJSON_AddNumberToObject(battery, TAG_IS_BATTERYTYPE_JUDGING, setting.isBatteryJudging);
     cJSON_AddItemToObject(root, TAG_BATTERY, battery);
 
 

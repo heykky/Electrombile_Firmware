@@ -15,20 +15,20 @@ typedef struct queue
     int rear;
     GPS gps[MAX_GPS_COUNT];
 }QUEUE;
-
 static QUEUE gps_queue = {0, 0};
 static LOCAL_GPS last_gps_info;
 static LOCAL_GPS* last_gps = &last_gps_info;
 
-static char isItineraryStart = ITINERARY_END;
 static int VibrationTime = 0;
 static int AlarmCount = 0;
 
-static eat_bool manager_ATcmd_flag = EAT_FALSE;
 static int manager_seq = 0;
+static eat_bool manager_ATcmd_flag = EAT_FALSE;
 
 static eat_bool isMoved = EAT_FALSE;
 
+static u8 batteryVoltage = 0;
+static u8 batteryPercent = 0;
 
 /*
  * to judge whether the queue is full
@@ -161,16 +161,9 @@ int ResetVibrationTime(void)
     return VibrationTime = 0;
 }
 
-char get_itinerary_state(void)
-{
-    return isItineraryStart;
-}
-
-void set_itinerary_state(char state)
-{
-    isItineraryStart = state;
-}
-
+/*
+* manager msg proc
+*/
 void set_manager_ATcmd_state(char state)
 {
     manager_ATcmd_flag = state;
@@ -189,6 +182,9 @@ int get_manager_seq(void)
     return manager_seq;
 }
 
+/*
+*data of isMove
+*/
 void Vibration_setMoved(eat_bool state)
 {
     isMoved = state;
@@ -198,10 +194,14 @@ eat_bool Vibration_isMoved(void)
     return isMoved;
 }
 
+/*
+*ctrl the alarm times
+*/
 void Reset_AlarmCount(void)
 {
     AlarmCount = 0;
 }
+
 int Get_AlarmCount(void)
 {
     return AlarmCount;
@@ -212,4 +212,26 @@ void Add_AlarmCount(void)
     AlarmCount++;
 }
 
+/*
+*batteryVoltage
+*/
+void battery_setVoltage(u8 voltage)
+{
+    batteryVoltage = voltage;
+}
+
+u8 battery_getVoltage(void)
+{
+    return batteryVoltage;
+}
+
+void battery_setPercent(u8 percent)
+{
+    batteryPercent = percent;
+}
+
+u8 battery_getPercent(void)
+{
+    return batteryPercent;
+}
 

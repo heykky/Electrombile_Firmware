@@ -24,10 +24,6 @@
 #include "response.h"
 #include "msg_queue.h"
 
-
-
-
-
 typedef int (*MSG_PROC)(const void* msg);       //TODO: add the message length parameter
 typedef struct
 {
@@ -59,7 +55,6 @@ static MC_MSG_PROC msgProcs[] =
     {CMD_UPGRADE_END, cmd_UpgradeEnd_rsp},
     {CMD_REBOOT, cmd_Reboot_rsp},
     {CMD_DEVICE_INFO_GET, cmd_DeviceInfo_rsp},
-    {CMD_ITINERARY, cmd_Itinerary_rsp},
     {CMD_SIM_INFO, cmd_SimInfo_rsp},
     {CMD_GET_LOG, cmd_LogInfo_rsp},
     {CMD_GET_GSM, cmd_GSMSignal_rsp},
@@ -68,6 +63,7 @@ static MC_MSG_PROC msgProcs[] =
     {CMD_GET_SETTING, cmd_GetSetting_rsp},
     {CMD_GET_BATTERY, cmd_GetBattery_rsp},
     {CMD_GET_AT, cmd_GetAT_rsp},
+    {CMD_SET_BATTERY_TYPE, cmd_SetBatteryType_rsp},
 };
 
 int client_handleOnePkt(const void* m, int msgLen)
@@ -120,7 +116,6 @@ int client_proc(const void *m, int msgLen)
         client_handleOnePkt(msg, ntohs(msg->length) + MSG_HEADER_LEN);
         leftLen = leftLen - MSG_HEADER_LEN - ntohs(msg->length);
         msg = (const MSG_HEADER *)((const char *)m + msgLen - leftLen);
-//        LOG_HEX((const char *)msg, leftLen);
     }
     return 0;
 }

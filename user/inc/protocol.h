@@ -70,6 +70,7 @@ enum
     //CMD_REBOOT          = 27,
     CMD_DEVICE_INFO_GET = 28,
     CMD_GPS_PACK        = 29,
+    CMD_SET_BATTERY_TYPE= 30,
 };
 
 enum
@@ -205,6 +206,16 @@ typedef struct
     char deciveType;
     char IMEI[MAX_IMEI_LENGTH];
 }__attribute__((__packed__)) MSG_LOGIN_REQ;
+
+typedef struct
+{
+    MSG_HEADER header;
+    int version;
+    char deciveType;
+    char IMEI[MAX_IMEI_LENGTH];
+    char voltage;
+}__attribute__((__packed__)) MSG_LOGIN_REQ_NEW;
+
 
 enum DeviceType{
     XiaoAnBao1 = 1,
@@ -576,6 +587,17 @@ typedef struct
     MSG_HEADER header;
     GPS gps[];
 }__attribute__((__packed__)) MSG_GPS_PACK;
+
+/*
+ * CMD_SET_BATTERY_TYPE message structure
+ */
+typedef struct
+{
+    MSG_HEADER header;
+    char type;
+}__attribute__((__packed__)) MSG_SET_BATTERY_TYPE;
+
+typedef MSG_HEADER MSG_SET_BATTERY_TYPE_RSP;
 
 typedef MSG_HEADER MSG_DEBUG_REQ;
 

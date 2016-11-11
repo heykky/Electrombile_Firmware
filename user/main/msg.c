@@ -41,24 +41,25 @@ void* alloc_rspMsg(const MSG_HEADER* pMsg)
     MSG_LENGTH rsp_msg_length_map[] =
     {
             //{CMD_DEFEND,    sizeof(MSG_DEFEND_RSP)},
-            {CMD_SEEK,      sizeof(MSG_SEEK_RSP)},
+            {CMD_SEEK,             sizeof(MSG_SEEK_RSP)},
 
-            {CMD_SET_AUTOSWITCH,    sizeof(MSG_AUTODEFEND_SWITCH_SET_RSP)},
-            {CMD_GET_AUTOSWITCH,    sizeof(MSG_AUTODEFEND_SWITCH_GET_RSP)},
+            {CMD_SET_AUTOSWITCH,   sizeof(MSG_AUTODEFEND_SWITCH_SET_RSP)},
+            {CMD_GET_AUTOSWITCH,   sizeof(MSG_AUTODEFEND_SWITCH_GET_RSP)},
 
-            {CMD_SET_PERIOD,    sizeof(MSG_AUTODEFEND_PERIOD_SET_RSP)},
-            {CMD_GET_PERIOD,    sizeof(MSG_AUTODEFEND_PERIOD_GET_RSP)},
+            {CMD_SET_PERIOD,       sizeof(MSG_AUTODEFEND_PERIOD_SET_RSP)},
+            {CMD_GET_PERIOD,       sizeof(MSG_AUTODEFEND_PERIOD_GET_RSP)},
 
-            {CMD_SET_TIMER,   sizeof(MSG_SET_TIMER_RSP)},
-            {CMD_DEFEND_ON,   sizeof(MSG_DEFEND_ON_RSP)},
-            {CMD_DEFEND_OFF,   sizeof(MSG_DEFEND_OFF_RSP)},
-            {CMD_DEFEND_GET,   sizeof(MSG_DEFEND_GET_RSP)},
+            {CMD_SET_TIMER,        sizeof(MSG_SET_TIMER_RSP)},
+            {CMD_DEFEND_ON,        sizeof(MSG_DEFEND_ON_RSP)},
+            {CMD_DEFEND_OFF,       sizeof(MSG_DEFEND_OFF_RSP)},
+            {CMD_DEFEND_GET,       sizeof(MSG_DEFEND_GET_RSP)},
 
-            {CMD_UPGRADE_START, sizeof(MSG_UPGRADE_START_RSP)},
-            {CMD_UPGRADE_DATA,  sizeof(MSG_UPGRADE_DATA_RSP)},
-            {CMD_UPGRADE_END,   sizeof(MSG_UPGRADE_END_RSP)},
-            {CMD_REBOOT,        sizeof(MSG_HEADER)},
-            {CMD_BATTERY,   sizeof(MSG_BATTERY_RSP)},
+            {CMD_UPGRADE_START,    sizeof(MSG_UPGRADE_START_RSP)},
+            {CMD_UPGRADE_DATA,     sizeof(MSG_UPGRADE_DATA_RSP)},
+            {CMD_UPGRADE_END,      sizeof(MSG_UPGRADE_END_RSP)},
+            {CMD_REBOOT,           sizeof(MSG_HEADER)},
+            {CMD_BATTERY,          sizeof(MSG_BATTERY_RSP)},
+            {CMD_SET_BATTERY_TYPE, sizeof(MSG_SET_BATTERY_TYPE_RSP)},
     };
 
     for (i = 0; i < sizeof(rsp_msg_length_map) / sizeof(rsp_msg_length_map[0]); i++)
