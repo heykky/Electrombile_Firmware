@@ -141,6 +141,7 @@ void app_gps_thread(void *data)
 {
     EatEvent_st event;
 	MSG_THREAD* msg = 0;
+    u8 msgLen = 0;
 
     LOG_INFO("gps thread start.");
 
