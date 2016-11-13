@@ -13,29 +13,31 @@
 #include "adc.h"
 #include "led.h"
 #include "log.h"
+#include "data.h"
 
-#define Realvalue_2_ADvalue(x) x*1000*3/103 //unit mV, 3K & 100k divider
 
 /*
  * 检测输入电压范围
  */
 static eat_bool diag_batterCheck(void)
 {
-    eat_bool rc;
-    u32 voltage;
+#define ADvalue_2_Realvalue(x) (x*103/3/1000.f) //unit mV, 3K & 100k divider
+    eat_bool rc = EAT_FALSE;
+    u32 value = 0;
+    u8 batVoltage = 0;
 
-    rc = eat_get_adc_sync(ADC_VOLTAGE, &voltage);
+    rc = eat_get_adc_sync(ADC_VOLTAGE, &value);
     if (!rc)
     {
         LOG_ERROR("Get battery voltage failed");
         return EAT_FALSE;
     }
+    batVoltage = (u8)(ADvalue_2_Realvalue(value) + 0.5);
+    battery_setVoltage(batVoltage);
 
-    //电池电压介于[28v, 85v]之间
-    //FIXME: 根据分压计算区间
-    if (voltage < Realvalue_2_ADvalue(28) || voltage > Realvalue_2_ADvalue(85))// while testing, 10 and 85 is OK
+    if (batVoltage < 28)// while testing, 10 and 85 is OK
     {
-        LOG_ERROR("battery voltage check failed: %d", voltage);
+        LOG_ERROR("battery voltage check failed: %d", batVoltage);
         return EAT_FALSE;
     }
 
@@ -98,7 +100,7 @@ static eat_bool diag_433Check(void)
     u32 voltage = diag_433_get();
 
     //检查433信号强度是否在[100mv, 1000mv]之间
-    if (voltage < 100 || voltage > 1000)
+    if (voltage < 100 || voltage > 1500)
     {
         LOG_ERROR("433 signal quality not enough: %d", voltage);
         return EAT_FALSE;

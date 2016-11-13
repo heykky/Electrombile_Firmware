@@ -19,10 +19,6 @@ enum CMD
     CMD_THREAD_ALARM,
     CMD_THREAD_LOCATION,
     CMD_THREAD_AUTOLOCK,
-    CMD_THREAD_ITINERARY,
-    CMD_THREAD_BATTERY,
-    CMD_THREAD_BATTERY_INFO,
-    CMD_THREAD_BATTERY_GET,
 };
 
 
@@ -67,22 +63,6 @@ typedef struct
 
 typedef struct
 {
-    char state;
-
-}VIBRATION_ITINERARY_INFO;
-
-
-typedef struct
-{
-    int starttime;
-    int endtime;
-    int itinerary;
-
-}__attribute__((__packed__))GPS_ITINERARY_INFO;
-
-
-typedef struct
-{
     float hdop;
     char satellites;
     int managerSeq;
@@ -92,13 +72,6 @@ typedef struct
 {
     int managerSeq;
 }__attribute__((__packed__))MANAGERSEQ_INFO;
-
-typedef struct
-{
-    char percent;
-    char miles;
-}__attribute__((__packed__))BATTERY_INFO;
-
 
 typedef struct
 {

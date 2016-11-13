@@ -89,37 +89,6 @@ static eat_bool vibration_sendAlarm(void)
     return EAT_FALSE;
 }
 
-/*
-*fun:send itinerary state to gps thread
-*note:ITINERARY_START express itinerary start, ITINERARY_END express itinerary end
-*/
-static eat_bool vivration_SendItinerarayState(char state)
-{
-    eat_bool ret;
-    u8 msgLen = sizeof(MSG_THREAD) + sizeof(VIBRATION_ITINERARY_INFO);
-    MSG_THREAD* msg = allocMsg(msgLen);
-    VIBRATION_ITINERARY_INFO* msg_state = 0;
-
-    if (!msg)
-    {
-        LOG_ERROR("alloc itinerary msg failed!");
-        return EAT_FALSE;
-    }
-
-    msg->cmd = CMD_THREAD_ITINERARY;
-    msg->length = sizeof(VIBRATION_ITINERARY_INFO);
-
-    msg_state = (VIBRATION_ITINERARY_INFO*)msg->data;
-    msg_state->state = state;
-
-    LOG_DEBUG("send itinerary state msg to GPS_thread:%d",state);
-    set_itinerary_state(state);
-    ret = sendMsg(THREAD_GPS, msg, msgLen);
-
-
-    return ret;
-}
-
 static void move_alarm_timer_handler()
 {
     unsigned char readbuf[3];
@@ -172,13 +141,7 @@ static void move_alarm_timer_handler()
                     vibration_sendAlarm();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, x_data[i]);
                 }
-
-                if(ITINERARY_END == get_itinerary_state())
-                {
-                    vivration_SendItinerarayState(ITINERARY_START);
-                }
-
-               return;
+                return;
             }
 
         }
@@ -195,12 +158,6 @@ static void move_alarm_timer_handler()
                     vibration_sendAlarm();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, y_data[i]);
                 }
-
-                if(ITINERARY_END == get_itinerary_state())
-                {
-                    vivration_SendItinerarayState(ITINERARY_START);
-                }
-
                 return;
             }
             if(y_data[0]<abs(y_data[i]))
@@ -221,12 +178,6 @@ static void move_alarm_timer_handler()
                     vibration_sendAlarm();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, z_data[i]);
                 }
-
-                if(ITINERARY_END == get_itinerary_state())
-                {
-                    vivration_SendItinerarayState(ITINERARY_START);
-                }
-
                 return;
             }
             if(z_data[0]<abs(z_data[i]))
@@ -314,18 +265,9 @@ static void vibration_timer_handler(void)
                 {
                     vivration_AutolockStateSend(EAT_TRUE);    //TODO:send autolock_msg to main thread
                     set_vibration_state(EAT_TRUE);
+                    Reset_AlarmCount();
                 }
             }
-        }
-
-        if(getVibrationTime() * setting.vibration_timer_period >= (2 * 60000))// 2min dont move ,judge one itinerary
-        {
-            if(ITINERARY_START == get_itinerary_state())
-            {
-                vivration_SendItinerarayState(ITINERARY_END);
-            }
-
-            Reset_AlarmCount();
         }
     }
 
