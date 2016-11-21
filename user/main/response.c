@@ -233,6 +233,36 @@ int cmd_AutodefendPeriodGet_rsp(const void* msg)
     return 0;
 }
 
+int cmd_SetServer_rsp(const void* msg)
+{
+    MSG_SET_SERVER_REQ *req = (MSG_SET_SERVER_REQ*)msg;
+    MSG_SET_SERVER_RSP*rsp = NULL;
+    u32 ip[4] = {0};
+    u32 port = 0;
+
+    int count = sscanf(req->data,"%u.%u.%u.%u:%u",&ip[0],&ip[1],&ip[2],&ip[3],&port);
+    if(5 == count)
+    {
+        setting.addr_type = ADDR_TYPE_IP;
+        setting.ipaddr[0] = (u8)ip[0];
+        setting.ipaddr[1] = (u8)ip[1];
+        setting.ipaddr[2] = (u8)ip[2];
+        setting.ipaddr[3] = (u8)ip[3];
+        setting.port = (u16)port;
+
+        setting_save();
+
+        rsp = alloc_msg(req->header.cmd,sizeof(MSG_SET_SERVER_RSP));
+        if (!rsp)
+        {
+            LOG_ERROR("alloc rsp message failed!");
+            return -1;
+        }
+        rsp->managerSeq = req->managerSeq;
+        socket_sendDataDirectly(rsp, sizeof(MSG_SET_SERVER_RSP));
+    }
+}
+
 int cmd_Battery_rsp(const void* msg)
 {
     MSG_BATTERY_RSP* rsp = alloc_msg(CMD_BATTERY, sizeof(MSG_BATTERY_RSP));
