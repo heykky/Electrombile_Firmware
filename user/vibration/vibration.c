@@ -265,9 +265,9 @@ static void vibration_timer_handler(void)
                 {
                     vivration_AutolockStateSend(EAT_TRUE);    //TODO:send autolock_msg to main thread
                     set_vibration_state(EAT_TRUE);
-                    Reset_AlarmCount();
                 }
-            }
+            }                    
+            Reset_AlarmCount();
         }
     }
 
