@@ -46,7 +46,7 @@ static eat_bool diag_batterCheck(void)
 
 int diag_gsm_get(void)
 {
-    return eat_network_get_csq();;
+    return eat_network_get_csq();
 }
 
 /*

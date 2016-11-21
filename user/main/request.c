@@ -77,7 +77,9 @@ void cmd_Heartbeat(void)
 {
     u8 msgLen = sizeof(MSG_HEADER) + sizeof(short);
     MSG_PING_REQ* msg = alloc_msg(CMD_PING, msgLen);
-    msg->status = htons(EAT_TRUE);   //TODO: to define the status bits
+
+    msg->gsm = (u8)eat_network_get_csq();
+    msg->voltage = (u8)battery_getVoltage();
 
     socket_sendDataDirectly(msg, msgLen);
 }
