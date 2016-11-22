@@ -24,8 +24,6 @@
 
 #define MOVE_THRESHOLD 5
 
-static eat_bool avoid_freq_flag = EAT_FALSE;
-
 
 void DigitalIntegrate(float * sour, float * dest,int len,float cycle)
 {
@@ -82,7 +80,6 @@ static eat_bool vibration_sendAlarm(void)
         msg_data->alarm_type = ALARM_VIBRATE;
 
         LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
-        avoid_freq_flag = EAT_TRUE;
         return sendMsg(THREAD_MAIN, msg, msgLen);
     }
 
@@ -191,32 +188,11 @@ static void move_alarm_timer_handler()
 
 }
 
-static void avoid_fre_send(eat_bool state)
-{
-    static u16 avoid_freq_count;
-
-    if(state == EAT_TRUE)
-    {
-        if(++avoid_freq_count == 10)
-        {
-            avoid_freq_count = 0;
-            avoid_freq_flag = EAT_FALSE;
-        }
-    }
-    else
-    {
-        avoid_freq_count = 0;
-    }
-}
-
-
 static void vibration_timer_handler(void)
 {
     static eat_bool isFirstTime = EAT_TRUE;
 
     uint8_t transient_src = 0;
-
-    avoid_fre_send(EAT_TRUE);
 
     mma8652_i2c_register_read(MMA8652_REG_TRANSIENT_SRC, &transient_src, sizeof(transient_src));
     if(transient_src & MMA8652_TRANSIENT_SRC_EA)
@@ -241,9 +217,8 @@ static void vibration_timer_handler(void)
     }
 
     //always to judge if need to alarm , just judge the defend state before send alarm
-    if(Vibration_isMoved() && avoid_freq_flag == EAT_FALSE)
+    if(Vibration_isMoved())
     {
-        avoid_fre_send(EAT_FALSE);
         eat_timer_start(TIMER_MOVE_ALARM, MOVE_TIMER_PERIOD);
         //vibration_sendAlarm();  //bec use displacement judgement , there do not alarm
     }
