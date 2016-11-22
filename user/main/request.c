@@ -79,7 +79,7 @@ void cmd_Heartbeat(void)
     MSG_PING_REQ* msg = alloc_msg(CMD_PING, msgLen);
 
     msg->gsm = (u8)eat_network_get_csq();
-    msg->voltage = (u8)battery_getVoltage();
+    msg->voltage = battery_getVoltage();
 
     socket_sendDataDirectly(msg, msgLen);
 }
