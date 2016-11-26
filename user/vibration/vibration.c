@@ -241,7 +241,7 @@ static void vibration_timer_handler(void)
                     vivration_AutolockStateSend(EAT_TRUE);    //TODO:send autolock_msg to main thread
                     set_vibration_state(EAT_TRUE);
                 }
-            }                    
+            }
             Reset_AlarmCount();
         }
     }
@@ -292,6 +292,9 @@ void app_vibration_thread(void *data)
                 }
                 break;
 
+            case EAT_EVENT_INT:
+                LOG_INFO("GPIO 10 intterupt");
+                break;
             default:
             	LOG_ERROR("event(%d) not processed!", event.event);
                 break;
