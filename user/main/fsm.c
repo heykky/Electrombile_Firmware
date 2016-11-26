@@ -166,12 +166,9 @@ static int action_onCallReady(void)
     if (modem_GPRSAttach())
     {
         LOG_DEBUG("gprs attach success");
-        fsm_run(EVT_GPRS_ATTACHED);
     }
-    else
-    {
-        fsm_trans(STATE_WAIT_GPRS);
-    }
+
+    fsm_trans(STATE_WAIT_GPRS);
 
 
     start_mainloop();
@@ -383,7 +380,6 @@ STATE_TRANSITIONS state_transitions[] =
 {
         {STATE_INITIAL,     EVT_CALL_READY,             action_onCallReady},
         {STATE_WAIT_GPRS,   EVT_LOOP,                   action_waitGprsOnLoop},
-        {STATE_INITIAL,   EVT_GPRS_ATTACHED,            action_onGprsAttached},
         {STATE_WAIT_GPRS,   EVT_GPRS_ATTACHED,          action_onGprsAttached},
         {STATE_WAIT_BEARER, EVT_BEARER_HOLD,            action_onBearHold},
         {STATE_WAIT_BEARER, EVT_BEARER_DEACTIVATED,     action_onBearDeactivated},
