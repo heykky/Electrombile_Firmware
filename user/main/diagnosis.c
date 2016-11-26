@@ -119,14 +119,14 @@ eat_bool diag_check(void)
     if (!diag_batterCheck())
     {
         LOG_ERROR("battery check failed!");
-        LED_off();
+        //LED_off();
         ret =  EAT_FALSE;
     }
 
     if (!diag_gsmSignalCheck())
     {
         LOG_ERROR("GSM check failed!");
-        LED_off();
+        //LED_off();
 
         ret = EAT_FALSE;
     }
@@ -134,7 +134,7 @@ eat_bool diag_check(void)
     if (!diag_433Check())
     {
         LOG_ERROR("433 check failed!");
-        LED_off();
+        //LED_off();
 
         ret = EAT_FALSE;
     }
@@ -144,5 +144,6 @@ eat_bool diag_check(void)
         LOG_DEBUG("System check OK");
     }
 
+    LED_on();
     return ret;
 }
