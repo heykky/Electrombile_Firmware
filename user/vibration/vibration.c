@@ -24,7 +24,32 @@
 
 #define MOVE_THRESHOLD 5
 
+static void vibration_alarmPlay(void)
+{
+    EatAudioToneTable_st tone =
+                        {
+                            300,    0,      200,    600,    1,
+                            2000,   0,      200,    600,    2,
+                            5000,   0,      600,    600,    3,
+                            6000,   0,      500,    11,     4,
+                            100,    200,    500,    10,     5,
+                            200,    300,    500,    10,     6,
+                            300,    400,    500,    10,     7,
+                            400,    500,    500,    10,     8,
+                            500,    600,    500,    10,     9,
+                            600,    700,    500,    10,     10,
+                            700,    800,    500,    10,     11,
+                            800,    900,    500,    10,     12,
+                            900,    1000,   500,    10,     13,
+                            1000,   1100,   500,    10,     14,
+                            1100,   1200,   500,    10,     0
+                        };
 
+    LOG_INFO("audio_test_custom_tone_play ");
+
+    eat_audio_set_custom_tone(&tone);
+    eat_audio_play_tone_id(EAT_TONE_CUSTOM_DTMF, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+}
 void DigitalIntegrate(float * sour, float * dest,int len,float cycle)
 {
 	int i;
@@ -78,6 +103,8 @@ static eat_bool vibration_sendAlarm(void)
         msg->cmd = CMD_THREAD_ALARM;
         msg->length = sizeof(ALARM_INFO);
         msg_data->alarm_type = ALARM_VIBRATE;
+
+        vibration_alarmPlay();
 
         LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
         return sendMsg(THREAD_MAIN, msg, msgLen);
@@ -241,7 +268,7 @@ static void vibration_timer_handler(void)
                     vivration_AutolockStateSend(EAT_TRUE);    //TODO:send autolock_msg to main thread
                     set_vibration_state(EAT_TRUE);
                 }
-            }                    
+            }
             Reset_AlarmCount();
         }
     }
