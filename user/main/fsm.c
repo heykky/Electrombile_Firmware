@@ -163,16 +163,12 @@ static void start_mainloop(void)
 
 static int action_onCallReady(void)
 {
+    fsm_trans(STATE_WAIT_GPRS);
     if (modem_GPRSAttach())
     {
         LOG_DEBUG("gprs attach success");
         fsm_run(EVT_GPRS_ATTACHED);
     }
-    else
-    {
-        fsm_trans(STATE_WAIT_GPRS);
-    }
-
 
     start_mainloop();
 

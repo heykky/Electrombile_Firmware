@@ -376,7 +376,7 @@ static int event_mod_ready_rd(const EatEvent_st* event)
 
     if (modem_IsCallReady(buf))
     {
-        diag_check();
+        //diag_check();  // because diagnosis is not accurate, remove it
 
         fsm_run(EVT_CALL_READY);
     }
