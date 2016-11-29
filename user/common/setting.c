@@ -138,7 +138,7 @@ static void setting_initial(void)
     regist_cmd(CMD_STRING_SERVER, setting_changeServer);//register the debug command
 
     /* Server configuration */
-#if 1
+#if 0
     setting.addr_type = ADDR_TYPE_DOMAIN;
     strncpy(setting.domain, "www.xiaoan110.com",MAX_DOMAIN_NAME_LEN);
 #else

@@ -493,9 +493,7 @@ int cmd_DefendOn_rsp(const void* msg)
         LOG_ERROR("alloc defend rsp message failed!");
         return -1;
     }
-    eat_gpio_setup(EAT_PIN59_COL3, EAT_GPIO_DIR_OUTPUT, EAT_GPIO_LEVEL_HIGH);
-    eat_gpio_setup(EAT_PIN61_COL1, EAT_GPIO_DIR_OUTPUT, EAT_GPIO_LEVEL_LOW);
-
+    telecontrol_cutoff();
     rsp->result = result;
 
     socket_sendDataDirectly(rsp, sizeof(MSG_DEFEND_ON_RSP));
@@ -524,8 +522,8 @@ int cmd_DefendOff_rsp(const void* msg)
         LOG_ERROR("alloc defend rsp message failed!");
         return -1;
     }
-    eat_gpio_setup(EAT_PIN59_COL3, EAT_GPIO_DIR_OUTPUT, EAT_GPIO_LEVEL_LOW);
-    eat_gpio_setup(EAT_PIN61_COL1, EAT_GPIO_DIR_OUTPUT, EAT_GPIO_LEVEL_HIGH);
+
+    telecontrol_connect();
 
     rsp->result = result;
 
