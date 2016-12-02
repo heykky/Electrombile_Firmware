@@ -242,9 +242,12 @@ static int battery_alarm_handler(void)
 */
 static void battery_event_adc(EatEvent_st *event)
 {
-    if(event->data.adc.pin == ADC_VOLTAGE && !Vibration_isMoved())
+    if(event->data.adc.pin == ADC_VOLTAGE)
     {
-        battery_store_voltage(event->data.adc.v);
+        if(!Vibration_isMoved())
+        {
+            battery_store_voltage(event->data.adc.v);
+        }
     }
     else
     {
