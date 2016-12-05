@@ -471,6 +471,27 @@ int cmd_GetAT_rsp(const void* msg)
     return 0;
 }
 
+int cmd_device_rsp(const void* msg)
+{
+    MSG_DEVICE_REQ *req = (MSG_DEVICE_REQ *)msg;
+    MSG_DEVICE_RSP *rsp = NULL;
+    int msgLen;
+    eat_bool rc = EAT_FALSE;
+
+    char buf[32]="{\"code\":700}";
+    msgLen = sizeof(MSG_DEVICE_RSP) + strlen(buf);
+
+    rsp = alloc_msg(req->header.cmd,msgLen);
+    if (!rsp)
+    {
+        LOG_ERROR("alloc LogInfo rsp message failed!");
+        return -1;
+    }
+    strncpy(rsp->data,buf,strlen(buf));
+    socket_sendDataDirectly(rsp, msgLen);
+
+    return 0;
+}
 
 int cmd_DefendOn_rsp(const void* msg)
 {

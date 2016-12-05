@@ -116,7 +116,7 @@ void app_main(void *data)
     EatEvent_st event;
     eat_bool rc;
     EatEntryPara_st *para;
-
+    __nop();
 
     APP_InitRegions();//Init app RAM
     APP_init_clib(); //C library initialize, second step

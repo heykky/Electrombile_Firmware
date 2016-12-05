@@ -65,6 +65,7 @@ static MC_MSG_PROC msgProcs[] =
     {CMD_SERVER     , cmd_SetServer_rsp},
     {CMD_GET_AT, cmd_GetAT_rsp},
     {CMD_SET_BATTERY_TYPE, cmd_SetBatteryType_rsp},
+    {CMD_DEVICE,           cmd_device_rsp},
 };
 
 int client_handleOnePkt(const void* m, int msgLen)
