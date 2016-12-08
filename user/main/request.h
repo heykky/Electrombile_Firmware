@@ -17,7 +17,6 @@ int cmd_Seek(unsigned int value);
 int cmd_GPS(GPS* gps);
 
 int cmd_GPSPack(void);
-int cmd_Itinerary_check(void);
 int cmd_alarm(char alarm_type);
 
 

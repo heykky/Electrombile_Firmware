@@ -49,7 +49,6 @@ static eat_bool gps_DuplicateCheck(LOCAL_GPS *pre_gps, LOCAL_GPS *gps);
 static eat_bool gps_GetGps(void);
 
 static long double getdistance(LOCAL_GPS *pre_gps, LOCAL_GPS *gps);
-void set_rtctime(double time);
 
 typedef struct
 {
@@ -75,92 +74,6 @@ static short mcc = 0;//mobile country code
 static short mnc = 0;//mobile network code
 static char  cellNo = 0;//cell count
 static CELL  cells[7] = {0};
-
-static double itinerary = 0.f;  //unit km
-
-
-static void gps_ResetIniterary(void)
-{
-    itinerary = 0.f;
-}
-
-
-/*
-*fun: send itinerary information to main thread
-*para: starttime    endtime     itinerary
-*/
-static void gps_IniterarySend(int starttime, int endtime ,int itinerary)
-{
-    u8 msgLen = sizeof(MSG_THREAD)+sizeof(GPS_ITINERARY_INFO);
-    MSG_THREAD* msg = allocMsg(msgLen);
-    GPS_ITINERARY_INFO* msg_state = 0;
-
-    if (!msg)
-    {
-        LOG_ERROR("alloc msg failed!");
-        return ;
-    }
-
-    msg->cmd = CMD_THREAD_ITINERARY;
-    msg->length = sizeof(GPS_ITINERARY_INFO);
-    msg_state = (GPS_ITINERARY_INFO*)(msg->data);
-
-    msg_state->endtime = endtime;
-    msg_state->starttime = starttime;
-    msg_state->itinerary= itinerary;
-
-    LOG_DEBUG("send itinerary to MainThread");
-    sendMsg(THREAD_MAIN, msg, msgLen);
-
-    return;
-}
-
-
-/*
-*fun: receive msg from vibration thread and caculate the itinerary
-*note:
-    ITINERARY_START express itinerary start
-    ITINERARY_END express itinerary end
-    this two msg must be send in order, if not, default it
-*/
-static void gps_ItinerarayHandler(const MSG_THREAD* msg)
-{
-    static int starttime;
-    VIBRATION_ITINERARY_INFO* msg_state = (VIBRATION_ITINERARY_INFO*) msg->data;
-
-    if (msg->length < sizeof(VIBRATION_ITINERARY_INFO) || !msg_state)
-    {
-         LOG_ERROR("msg from THREAD_ITINERARY error!");
-         return ;
-    }
-
-    if(ITINERARY_START == msg_state->state && 0 == starttime)
-    {
-        LOG_DEBUG("itinerary start");
-        gps_ResetIniterary();
-        starttime = rtc_getTimestamp();
-        if(starttime <= 0)
-        {
-            LOG_DEBUG("itinerary start error,set state to default");
-            set_itinerary_state(ITINERARY_END);
-            starttime = 0;
-        }
-    }
-    else if(ITINERARY_END == msg_state->state && 0 < starttime)
-    {
-        LOG_DEBUG("itinerary end");
-        gps_IniterarySend(starttime,rtc_getTimestamp(),(int)itinerary);
-        starttime = 0;
-    }
-    else
-    {
-        LOG_ERROR("Itinerary state error , set state to default");
-        set_itinerary_state(ITINERARY_END);
-        starttime = 0;
-    }
-
-    return;
-}
 
 /*
 *fun: send dpop information to main thread
@@ -228,7 +141,7 @@ void app_gps_thread(void *data)
 {
     EatEvent_st event;
 	MSG_THREAD* msg = 0;
-	u8 msgLen = 0;
+    u8 msgLen = 0;
 
     LOG_INFO("gps thread start.");
 
@@ -279,11 +192,6 @@ void app_gps_thread(void *data)
                     case CMD_THREAD_LOCATION:
                         LOG_DEBUG("gps get CMD_THREAD_LOCATION.");
                         location_handler(msg->cmd);
-                        break;
-
-                    case CMD_THREAD_ITINERARY:
-                        LOG_DEBUG("gps get CMD_THREAD_ITINERARY.");
-                        gps_ItinerarayHandler(msg);
                         break;
 
                     case CMD_THREAD_GPSHDOP:
@@ -657,7 +565,6 @@ static eat_bool gps_DuplicateCheck(LOCAL_GPS *pre_gps, LOCAL_GPS *gps)
                 else
                 {
                     timerCount = 0;
-                    itinerary += distance;
                     LOG_DEBUG("GPS is different. %f, %f.", pre_gps->gps.latitude, gps->gps.latitude);
                     return EAT_FALSE;
                 }

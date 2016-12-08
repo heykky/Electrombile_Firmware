@@ -32,6 +32,7 @@ enum
 
 enum
 {
+    CMD_SERVER          = -9,
     CMD_GET_AT          = -8,
     CMD_REBOOT          = -7,
     CMD_GET_LOG         = -6,
@@ -70,6 +71,7 @@ enum
     //CMD_REBOOT          = 27,
     CMD_DEVICE_INFO_GET = 28,
     CMD_GPS_PACK        = 29,
+    CMD_SET_BATTERY_TYPE= 30,
 };
 
 enum
@@ -100,6 +102,22 @@ typedef struct
     MSG_HEADER header;
     int managerSeq;
 }__attribute__((__packed__)) MSG_GET_HEADER;
+
+/*
+ * set server message structure
+ */
+typedef struct
+{
+    MSG_HEADER header;
+    int managerSeq;
+    char data[];
+}__attribute__((__packed__)) MSG_SET_SERVER_REQ;
+
+typedef struct
+{
+    MSG_HEADER header;
+    int managerSeq;
+}__attribute__((__packed__)) MSG_SET_SERVER_RSP;
 
 /*
  * get log message structure
@@ -206,6 +224,16 @@ typedef struct
     char IMEI[MAX_IMEI_LENGTH];
 }__attribute__((__packed__)) MSG_LOGIN_REQ;
 
+typedef struct
+{
+    MSG_HEADER header;
+    int version;
+    char deciveType;
+    char IMEI[MAX_IMEI_LENGTH];
+    char voltage;
+}__attribute__((__packed__)) MSG_LOGIN_REQ_NEW;
+
+
 enum DeviceType{
     XiaoAnBao1 = 1,
     XiaoAnBao2 = 2,
@@ -221,7 +249,8 @@ typedef MSG_HEADER MSG_LOGIN_RSP;
 typedef struct
 {
     MSG_HEADER header;
-    short status;   //TODO: to define the status bits
+    char gsm;
+    char voltage;
 }__attribute__((__packed__)) MSG_PING_REQ;
 
 typedef MSG_HEADER MSG_PING_RSP;
@@ -576,6 +605,17 @@ typedef struct
     MSG_HEADER header;
     GPS gps[];
 }__attribute__((__packed__)) MSG_GPS_PACK;
+
+/*
+ * CMD_SET_BATTERY_TYPE message structure
+ */
+typedef struct
+{
+    MSG_HEADER header;
+    char type;
+}__attribute__((__packed__)) MSG_SET_BATTERY_TYPE;
+
+typedef MSG_HEADER MSG_SET_BATTERY_TYPE_RSP;
 
 typedef MSG_HEADER MSG_DEBUG_REQ;
 

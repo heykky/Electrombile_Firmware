@@ -20,11 +20,11 @@
 #include "data.h"
 #include "modem.h"
 #include "response.h"
-#include "itinerary.h"
+#include "data.h"
 
 int cmd_Login(void)
 {
-    MSG_LOGIN_REQ* msg = alloc_msg(CMD_LOGIN, sizeof(MSG_LOGIN_REQ));
+    MSG_LOGIN_REQ_NEW* msg = alloc_msg(CMD_LOGIN, sizeof(MSG_LOGIN_REQ_NEW));
     u8 imei[MAX_IMEI_LENGTH] = {0};
 
     if (!msg)
@@ -36,12 +36,13 @@ int cmd_Login(void)
     msg->version = htonl(VERSION_NUM);
 
     eat_get_imei(imei, MAX_IMEI_LENGTH);
-
     memcpy(msg->IMEI, imei, MAX_IMEI_LENGTH);
+
+    msg->voltage = battery_getVoltage();
 
     LOG_DEBUG("send login message.");
 
-    socket_sendDataDirectly(msg, sizeof(MSG_LOGIN_REQ));
+    socket_sendDataDirectly(msg, sizeof(MSG_LOGIN_REQ_NEW));
 
     return 0;
 }
@@ -76,7 +77,9 @@ void cmd_Heartbeat(void)
 {
     u8 msgLen = sizeof(MSG_HEADER) + sizeof(short);
     MSG_PING_REQ* msg = alloc_msg(CMD_PING, msgLen);
-    msg->status = htons(EAT_TRUE);   //TODO: to define the status bits
+
+    msg->gsm = (u8)eat_network_get_csq();
+    msg->voltage = battery_getVoltage();
 
     socket_sendDataDirectly(msg, msgLen);
 }
@@ -93,40 +96,10 @@ int cmd_alarm(char alarm_type)
     LOG_DEBUG("send alarm vibrate message.");
     socket_msg->alarmType = alarm_type;
 
+    set_vibration_state(EAT_FALSE);// if alarm, set the vibration state as defend off
+
     //TODO: should provide the message send failed handler
     socket_sendDataWaitAck(socket_msg, sizeof(MSG_ALARM_REQ), NULL, NULL);
-
-    return 0;
-}
-
-int cmd_Itinerary_check(void)
-{
-    MSG_ITINERARY_REQ* itinerary_msg;
-    ITINERARY itinerary;
-    int rc = -1;
-
-    rc = itinerary_get(&itinerary.starttime, &itinerary.miles, &itinerary.endtime);
-
-    if(rc == EAT_FS_FILE_NOT_FOUND)//no file ,no itinerary storage
-    {
-        return 0;
-    }
-
-    if(rc < 0)
-    {
-        LOG_ERROR("read itinerary file error!");
-        return -1;
-    }
-
-    itinerary_msg = alloc_msg(CMD_ITINERARY, sizeof(MSG_ITINERARY_REQ));
-
-    itinerary_msg->starttime = itinerary.starttime;
-    itinerary_msg->mileage= itinerary.miles;
-    itinerary_msg->endtime= itinerary.endtime;
-
-    LOG_DEBUG("send itinerary msg,start:%d end:%d itinerary:%d",ntohl(itinerary_msg->starttime),ntohl(itinerary_msg->endtime),ntohl(itinerary_msg->mileage));
-
-    socket_sendDataWaitAck((MSG_ITINERARY_REQ*)itinerary_msg, sizeof(MSG_ITINERARY_REQ),NULL, NULL);//no need to call call-back to store itinerary
 
     return 0;
 }

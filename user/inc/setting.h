@@ -52,7 +52,10 @@ typedef struct
     };
 
     //battery type
-    unsigned char BaterryType;
+    eat_bool isUserType;
+    u8 BatteryType;
+    u8 BaterryType_Judging;
+    eat_bool isBatteryJudging;
 
 
 }SETTING;
@@ -70,9 +73,13 @@ unsigned char get_autodefend_period(void);
 void set_autodefend_period(unsigned char period);
 eat_bool get_autodefend_state(void);
 
+eat_bool isUserBatteryTpye(void);
+void set_UserBatteryTpye(u8 batteryType);
 unsigned char get_battery_type(void);
 void set_battery_type(unsigned char batterytype);
-
+unsigned char get_batterytype_Judging(void);
+eat_bool get_battery_isJudging(void);
+void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype);
 
 eat_bool setting_restore(void);
 eat_bool setting_save(void);

@@ -10,7 +10,6 @@
 
 int cmd_Login_rsp(const void* msg);
 int cmd_Ping_rsp(const void* msg);
-int cmd_Itinerary_rsp(const void * msg);
 int cmd_SimInfo_rsp(const void* msg);
 int cmd_Alarm_rsp(const void* msg);
 int cmd_Sms_rsp(const void* msg);
@@ -27,7 +26,9 @@ int cmd_AutodefendPeriodGet_rsp(const void* msg);
 int cmd_Server_rsp(const void* msg);
 int cmd_Timer_rsp(const void* msg);
 int cmd_Battery_rsp(const void* msg);
+int cmd_SetServer_rsp(const void* msg);
 int cmd_Reboot_rsp(const void* msg);
+int cmd_SetBatteryType_rsp(const void* msg);
 
 int cmd_UpgradeStart_rsp(const void* msg);
 int cmd_UpgradeData_rsp(const void* msg);

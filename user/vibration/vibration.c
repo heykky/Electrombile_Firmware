@@ -24,8 +24,6 @@
 
 #define MOVE_THRESHOLD 5
 
-static eat_bool avoid_freq_flag = EAT_FALSE;
-
 
 void DigitalIntegrate(float * sour, float * dest,int len,float cycle)
 {
@@ -72,7 +70,7 @@ static eat_bool vibration_sendAlarm(void)
     ALARM_INFO *msg_data = NULL;
 
     Add_AlarmCount();
-    if(Get_AlarmCount() <= 3)
+    if(Get_AlarmCount() < 2)
     {
         msg = allocMsg(msgLen);
         msg_data = (ALARM_INFO*)msg->data;
@@ -82,42 +80,10 @@ static eat_bool vibration_sendAlarm(void)
         msg_data->alarm_type = ALARM_VIBRATE;
 
         LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
-        avoid_freq_flag = EAT_TRUE;
         return sendMsg(THREAD_MAIN, msg, msgLen);
     }
 
     return EAT_FALSE;
-}
-
-/*
-*fun:send itinerary state to gps thread
-*note:ITINERARY_START express itinerary start, ITINERARY_END express itinerary end
-*/
-static eat_bool vivration_SendItinerarayState(char state)
-{
-    eat_bool ret;
-    u8 msgLen = sizeof(MSG_THREAD) + sizeof(VIBRATION_ITINERARY_INFO);
-    MSG_THREAD* msg = allocMsg(msgLen);
-    VIBRATION_ITINERARY_INFO* msg_state = 0;
-
-    if (!msg)
-    {
-        LOG_ERROR("alloc itinerary msg failed!");
-        return EAT_FALSE;
-    }
-
-    msg->cmd = CMD_THREAD_ITINERARY;
-    msg->length = sizeof(VIBRATION_ITINERARY_INFO);
-
-    msg_state = (VIBRATION_ITINERARY_INFO*)msg->data;
-    msg_state->state = state;
-
-    LOG_DEBUG("send itinerary state msg to GPS_thread:%d",state);
-    set_itinerary_state(state);
-    ret = sendMsg(THREAD_GPS, msg, msgLen);
-
-
-    return ret;
 }
 
 static void move_alarm_timer_handler()
@@ -172,13 +138,7 @@ static void move_alarm_timer_handler()
                     vibration_sendAlarm();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, x_data[i]);
                 }
-
-                if(ITINERARY_END == get_itinerary_state())
-                {
-                    vivration_SendItinerarayState(ITINERARY_START);
-                }
-
-               return;
+                return;
             }
 
         }
@@ -195,12 +155,6 @@ static void move_alarm_timer_handler()
                     vibration_sendAlarm();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, y_data[i]);
                 }
-
-                if(ITINERARY_END == get_itinerary_state())
-                {
-                    vivration_SendItinerarayState(ITINERARY_START);
-                }
-
                 return;
             }
             if(y_data[0]<abs(y_data[i]))
@@ -221,12 +175,6 @@ static void move_alarm_timer_handler()
                     vibration_sendAlarm();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, z_data[i]);
                 }
-
-                if(ITINERARY_END == get_itinerary_state())
-                {
-                    vivration_SendItinerarayState(ITINERARY_START);
-                }
-
                 return;
             }
             if(z_data[0]<abs(z_data[i]))
@@ -240,32 +188,11 @@ static void move_alarm_timer_handler()
 
 }
 
-static void avoid_fre_send(eat_bool state)
-{
-    static u16 avoid_freq_count;
-
-    if(state == EAT_TRUE)
-    {
-        if(++avoid_freq_count == 10)
-        {
-            avoid_freq_count = 0;
-            avoid_freq_flag = EAT_FALSE;
-        }
-    }
-    else
-    {
-        avoid_freq_count = 0;
-    }
-}
-
-
 static void vibration_timer_handler(void)
 {
     static eat_bool isFirstTime = EAT_TRUE;
 
     uint8_t transient_src = 0;
-
-    avoid_fre_send(EAT_TRUE);
 
     mma8652_i2c_register_read(MMA8652_REG_TRANSIENT_SRC, &transient_src, sizeof(transient_src));
     if(transient_src & MMA8652_TRANSIENT_SRC_EA)
@@ -290,9 +217,8 @@ static void vibration_timer_handler(void)
     }
 
     //always to judge if need to alarm , just judge the defend state before send alarm
-    if(Vibration_isMoved() && avoid_freq_flag == EAT_FALSE)
+    if(Vibration_isMoved())
     {
-        avoid_fre_send(EAT_FALSE);
         eat_timer_start(TIMER_MOVE_ALARM, MOVE_TIMER_PERIOD);
         //vibration_sendAlarm();  //bec use displacement judgement , there do not alarm
     }
@@ -315,16 +241,7 @@ static void vibration_timer_handler(void)
                     vivration_AutolockStateSend(EAT_TRUE);    //TODO:send autolock_msg to main thread
                     set_vibration_state(EAT_TRUE);
                 }
-            }
-        }
-
-        if(getVibrationTime() * setting.vibration_timer_period >= (2 * 60000))// 2min dont move ,judge one itinerary
-        {
-            if(ITINERARY_START == get_itinerary_state())
-            {
-                vivration_SendItinerarayState(ITINERARY_END);
-            }
-
+            }                    
             Reset_AlarmCount();
         }
     }
@@ -343,7 +260,7 @@ void app_vibration_thread(void *data)
 	ret = mma8652_init();
 	if (!ret)
 	{
-        LED_off();
+        //LED_off();
         LOG_ERROR("mma8652 init failed");
 	}
 	else

@@ -12,12 +12,6 @@
 #include "protocol.h"
 #include "thread_msg.h"
 
-typedef enum
-{
-	ITINERARY_START,
-	ITINERARY_END
-}ITINERARY_STATE;
-
 eat_bool gps_isQueueFull(void);
 eat_bool gps_isQueueEmpty(void);
 
@@ -29,9 +23,6 @@ int gps_size(void);
 
 LOCAL_GPS* gps_get_last(void);
 int gps_save_last(LOCAL_GPS* gps);
-
-char get_itinerary_state(void);
-void set_itinerary_state(char state);
 
 int getVibrationTime(void);
 int VibrationTimeAdd(void);
@@ -50,9 +41,13 @@ void Reset_AlarmCount(void);
 int Get_AlarmCount(void);
 void Add_AlarmCount(void);
 
+void battery_setVoltage(u8 voltage);
+u8 battery_getVoltage(void);
+void battery_setPercent(u8 percent);
+u8 battery_getPercent(void);
+
 
 #define MAX_GPS_COUNT 10
-#define MAX_VLOTAGE_NUM 10
 
 
 #endif /* USER_ELECTROMBILE_DATA_H_ */
