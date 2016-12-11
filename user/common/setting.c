@@ -22,6 +22,7 @@
 #include "cJSON.h"
 #include "mem.h"
 #include "utils.h"
+#include "telecontrol.h"
 
 typedef struct
 {
@@ -181,6 +182,7 @@ eat_bool vibration_fixed(void)
 
 void set_vibration_state(eat_bool fixed)
 {
+    if(fixed == EAT_TRUE)telecontrol_cutoff();
     setting.isVibrateFixed = fixed;
 }
 
