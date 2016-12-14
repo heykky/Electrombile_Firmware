@@ -14,6 +14,7 @@
 #include "rtc.h"
 #include "utils.h"
 #include "version.h"
+#include "modem.h"
 
 #define MAX_CMD_LENGTH (16)
 #define MAX_CMD_NUMBER  (32)
@@ -32,6 +33,7 @@ static int cmd_imei(const unsigned char* cmdString, unsigned short length);
 static int cmd_imsi(const unsigned char* cmdString, unsigned short length);
 static int cmd_chipid(const unsigned char* cmdString, unsigned short length);
 static int cmd_AT(const unsigned char* cmdString, unsigned short length);
+static int cmd_record(const unsigned char* cmdString, unsigned short length);
 
 
 #ifdef APP_DEBUG
@@ -49,6 +51,8 @@ static CMD_MAP cmd_map[MAX_CMD_NUMBER] =
         {"chipid",      cmd_chipid},
         {"AT",          cmd_AT},
         {"at",          cmd_AT},
+        {"start",       cmd_record},
+        {"stop",        cmd_record},
 #ifdef APP_DEBUG
         {"reboot",      cmd_reboot},
         {"halt",        cmd_halt},
@@ -113,6 +117,13 @@ static int cmd_AT(const unsigned char* cmdString, unsigned short length)
     //forward AT command to modem
     eat_modem_write(cmdString, length);
     eat_modem_write("\n", 1);
+    return 0;
+}
+
+static int cmd_record(const unsigned char* cmdString, unsigned short length)
+{
+    if(strstr(cmdString, "start"))modem_startRecord();
+    if(strstr(cmdString, "stop"))modem_stopRecord();
     return 0;
 }
 

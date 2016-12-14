@@ -29,6 +29,8 @@
 #define AT_CGNSINF  "AT+CGNSINF"
 #define AT_CCID     "AT+CCID"
 
+#define AT_START_RECORD "AT+CREC=1,\"C:\\record.amr\",0,0,0,0,0"
+#define AT_STOP_RECORD "AT+CREC=2"
 
 static eat_bool modem_cmd(const unsigned char *cmd)
 {
@@ -145,14 +147,12 @@ eat_bool modem_readCellInfo(void)
 {
     unsigned char* cmd = AT_CENG MODEM_READ_CMD CR;
 
-
     return modem_cmd(cmd);
 }
 
 eat_bool modem_readCCIDInfo(void)
 {
     unsigned char* cmd = AT_CCID CR;
-
 
     return modem_cmd(cmd);
 }
@@ -167,6 +167,18 @@ eat_bool modem_GNSS(void)
 
 eat_bool modem_AT(unsigned char *cmd)
 {
+    return modem_cmd(cmd);
+}
+
+eat_bool modem_startRecord(void)
+{
+    unsigned char* cmd = AT_START_RECORD CR;
+    return modem_cmd(cmd);
+}
+
+eat_bool modem_stopRecord(void)
+{
+    unsigned char* cmd = AT_STOP_RECORD CR;
     return modem_cmd(cmd);
 }
 
