@@ -61,6 +61,9 @@ SETTING setting;
 #define TAG_BATTERYTYPE_JUDGING "batterytype_judging"
 #define TAG_IS_BATTERYTYPE_JUDGING "isbatterytype_judging"
 
+#define TAG_IS_VIBRATEFIXED "isVibrateFixed"
+#define TAGP_VIBRATE "defendstate"
+
 
 //the setting file format is as follow
 //{
@@ -182,6 +185,7 @@ eat_bool vibration_fixed(void)
 void set_vibration_state(eat_bool fixed)
 {
     setting.isVibrateFixed = fixed;
+    setting_save();
 }
 
 eat_bool get_autodefend_state(void)
@@ -257,6 +261,7 @@ eat_bool setting_restore(void)
     cJSON *addr = 0;
     cJSON *autolock = 0;
     cJSON *battery = 0;
+    cJSON *defend_state = 0;
 
     setting_initial();
 
@@ -390,6 +395,17 @@ eat_bool setting_restore(void)
     setting.BaterryType_Judging = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE_JUDGING)->valueint;
     setting.isBatteryJudging = cJSON_GetObjectItem(battery, TAG_IS_BATTERYTYPE_JUDGING)->valueint ? EAT_TRUE : EAT_FALSE;
 
+    defend_state = cJSON_GetObjectItem(conf, TAGP_VIBRATE);
+    if(!defend_state)
+    {
+        LOG_ERROR("no isVibrateFixed config in setting file!");
+        eat_fs_Close(fh);
+        free(buf);
+        cJSON_Delete(conf);
+        return EAT_FALSE;
+    }
+    setting.isVibrateFixed = cJSON_GetObjectItem(defend_state, TAG_IS_VIBRATEFIXED)->valueint ? EAT_TRUE : EAT_FALSE;
+
     LOG_DEBUG("BATTERY TYPE IS %d", setting.BatteryType);
 
     free(buf);
@@ -409,6 +425,7 @@ eat_bool setting_save(void)
     cJSON *address = cJSON_CreateObject();
     cJSON *autolock = cJSON_CreateObject();
     cJSON *battery = cJSON_CreateObject();
+    cJSON *defend_state = cJSON_CreateObject();
 
     char *content = 0;
 
@@ -439,8 +456,10 @@ eat_bool setting_save(void)
     cJSON_AddNumberToObject(battery, TAG_IS_BATTERYTYPE_JUDGING, setting.isBatteryJudging);
     cJSON_AddItemToObject(root, TAG_BATTERY, battery);
 
+    cJSON_AddNumberToObject(defend_state, TAG_IS_VIBRATEFIXED, setting.isVibrateFixed);
+    cJSON_AddItemToObject(root, TAGP_VIBRATE, defend_state);
 
-    content = cJSON_Print(root);
+    content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less
     LOG_DEBUG("save setting...");
 
     fh = eat_fs_Open(SETTINGFILE_NAME, FS_READ_WRITE|FS_CREATE);
