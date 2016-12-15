@@ -23,6 +23,7 @@
 #include "seek.h"
 #include "response.h"
 #include "msg_queue.h"
+#include "device.h"
 
 typedef int (*MSG_PROC)(const void* msg);       //TODO: add the message length parameter
 typedef struct
@@ -65,7 +66,7 @@ static MC_MSG_PROC msgProcs[] =
     {CMD_SERVER     , cmd_SetServer_rsp},
     {CMD_GET_AT, cmd_GetAT_rsp},
     {CMD_SET_BATTERY_TYPE, cmd_SetBatteryType_rsp},
-    {CMD_DEVICE,           cmd_device_rsp},
+    {CMD_DEVICE,           cmd_device_handler},
 };
 
 int client_handleOnePkt(const void* m, int msgLen)

@@ -624,14 +624,12 @@ typedef MSG_HEADER MSG_SET_BATTERY_TYPE_RSP;
 typedef struct
 {
     MSG_HEADER header;
-    char action;
     char data[];
 }__attribute__((__packed__)) MSG_DEVICE_REQ;
 
 typedef struct
 {
     MSG_HEADER header;
-    char action;
     char data[];
 }__attribute__((__packed__)) MSG_DEVICE_RSP;
 
