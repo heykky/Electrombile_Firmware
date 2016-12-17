@@ -201,20 +201,13 @@ static u8 battery_isAlarm(void)
     battery_setVoltage((u8)(ADvalue_2_Realvalue(voltage) + 0.5));
     battery_setPercent(percent);
 
-    if(70 < percent)    //battery > 70, assume as charge, reset and wait for reducing to 50
+    if(70 < percent)    //battery > 70, assume as charge, reset and wait for reducing to 30
     {
         batteryState = BATTERY_ALARM_NULL;
     }
-    else if(50 > percent)
+    else if(30 > percent &&batteryState != BATTERY_ALARM_30)
     {
-        if(30 < percent && batteryState != BATTERY_ALARM_50 && batteryState != BATTERY_ALARM_30)//30 < battery <50,alarm once,and wait for reducing to 30
-        {
-            return batteryState = BATTERY_ALARM_50;
-        }
-        else if(batteryState != BATTERY_ALARM_30)//30 < battery,alarm once,and do nothing
-        {
-            return batteryState = BATTERY_ALARM_30;
-        }
+        return batteryState = BATTERY_ALARM_30;
     }
 
     return BATTERY_ALARM_NULL;
