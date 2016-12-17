@@ -179,8 +179,9 @@ static u8 battery_getType_percent(u32 voltage)
 static u8 battery_isAlarm(void)
 {
     static char batteryState = BATTERY_ALARM_NULL;
-    u32 voltage = 0;
+
     u8 percent = 0;
+    u8 percent_untype = BATTERY_TYPENULL;
 
     u32 voltage = battery_get_Voltage();
     if(0 == voltage)//if battery has not been detected
@@ -190,7 +191,7 @@ static u8 battery_isAlarm(void)
 
     percent = battery_getType_percent(voltage);
 
-    u8 percent_untype = battery_Judge_type(voltage);//judge new battery type
+    percent_untype = battery_Judge_type(voltage);//judge new battery type
     if(percent > MAX_PERCENT_NUM)//if battery type is not judged , get battery as no type
     {
         percent = percent_untype;
