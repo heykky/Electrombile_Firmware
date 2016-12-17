@@ -35,7 +35,7 @@ enum
 #define MAX_VLOTAGE_NUM 10
 
 #define MAX_PERCENT_NUM 100
-#define BATTERY_TIMER_PEROID (1*60*1000)   // once for one min ,check and store battery voltage and percent
+#define BATTERY_TIMER_PEROID (10*60*1000)   // once for one min ,check and store battery voltage and percent
 
 #define ADvalue_2_Realvalue(x) (x*103/3/1000.f) //unit mV, 3K & 100k divider
 #define Voltage2Percent(x) exp((x-37.873)/2.7927)
@@ -179,9 +179,16 @@ static u8 battery_getType_percent(u32 voltage)
 static u8 battery_isAlarm(void)
 {
     static char batteryState = BATTERY_ALARM_NULL;
+    u32 voltage = 0;
+    u8 percent = 0;
 
     u32 voltage = battery_get_Voltage();
-    u8 percent = battery_getType_percent(voltage);
+    if(0 == voltage)//if battery has not been detected
+    {
+        return BATTERY_ALARM_NULL;
+    }
+
+    percent = battery_getType_percent(voltage);
 
     u8 percent_untype = battery_Judge_type(voltage);//judge new battery type
     if(percent > MAX_PERCENT_NUM)//if battery type is not judged , get battery as no type
@@ -242,11 +249,20 @@ static int battery_alarm_handler(void)
 */
 static void battery_event_adc(EatEvent_st *event)
 {
+    static int time_count = 0;
+
     if(event->data.adc.pin == ADC_VOLTAGE)
     {
         if(!Vibration_isMoved())
         {
-            battery_store_voltage(event->data.adc.v);
+            if(++time_count > 2 * 60 * (1000 / ADC_VOLTAGE_PERIOD))   //when stay for 2 mins, start to detect battery
+            {
+                battery_store_voltage(event->data.adc.v);
+            }
+        }
+        else
+        {
+            time_count = 0;
         }
     }
     else
