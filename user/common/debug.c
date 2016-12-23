@@ -71,7 +71,7 @@ static int cmd_debug(const unsigned char* cmdString, unsigned short length)
 
 static int cmd_version(const unsigned char* cmdString, unsigned short length)
 {
-    DBG_OUT("version:%s(%s %s) core:%s(buildNo:%s@%s)", VERSION_STR, __DATE__, __TIME__, eat_get_version(), eat_get_buildno(), eat_get_buildtime());
+    DBG_OUT("version:%s(build:%s %s) core:%s(buildNo:%s@%s)", VERSION_STR, __DATE__, __TIME__, eat_get_version(), eat_get_buildno(), eat_get_buildtime());
     return 0;
 }
 

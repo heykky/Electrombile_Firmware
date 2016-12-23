@@ -180,7 +180,7 @@ int socket_connect(u8 ip_addr[4])
         return ERR_SOCKET_OPTION_FAILED;
     }
 
-    val = SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT;
+    val = SOC_READ | SOC_WRITE | SOC_CLOSE | SOC_CONNECT | SOC_ACKED;
     rc = eat_soc_setsockopt(socket_id, SOC_ASYNC, &val, sizeof(val));
     if (rc != SOC_SUCCESS)
     {
