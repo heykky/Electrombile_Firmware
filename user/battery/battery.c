@@ -35,7 +35,7 @@ enum
 #define MAX_VLOTAGE_NUM 10
 
 #define MAX_PERCENT_NUM 100
-#define BATTERY_TIMER_PEROID (1*60*1000)   // once for one min ,check and store battery voltage and percent
+#define BATTERY_TIMER_PEROID (5*60*1000)   // once for 5 mins ,check and store battery voltage and percent
 
 #define ADvalue_2_Realvalue(x) (x*103/3/1000.f) //unit mV, 3K & 100k divider
 #define Voltage2Percent(x) exp((x-37.873)/2.7927)
@@ -108,31 +108,30 @@ static u8 battery_Judge_type(u32 voltage)
     percent = (int)Voltage2Percent(ADvalue_2_Realvalue(voltage));
     percent = percent>MAX_PERCENT_NUM?MAX_PERCENT_NUM:percent;
 
-    if(battery_type == get_battery_type())
+    // if battery type has been typed by user or battery type is ok, do not judge battery type
+    if(isUserBatteryTpye() || battery_type == get_battery_type())
     {
-        LOG_DEBUG("battery type OK: %d",battery_type);
         return (u8)percent;
     }
 
+
+    //judge battery type: when percent > 60, start judging, when percent < 40, stop judging
     if(60 < percent)
     {
-        if(battery_type != get_batterytype_Judging())
+        if(battery_type != get_batterytype_Judging())// if has not start judging, start it
         {
             LOG_DEBUG("start to judge battery type: %d",battery_type);
             set_battery_isJudging(EAT_TRUE, battery_type);
         }
-
-        return (u8)percent;
     }
-
-    if(40 > percent && !isUserBatteryTpye())
+    else if(40 > percent )
     {
-        if(get_battery_isJudging() && battery_type == get_batterytype_Judging())
+        if(get_battery_isJudging() && battery_type == get_batterytype_Judging())// confirm the batterytype_judging and finish judging
         {
             LOG_DEBUG("set battery type: %d",battery_type);
             set_battery_type(battery_type);
         }
-        set_battery_isJudging(EAT_FALSE, BATTERY_TYPENULL);
+        set_battery_isJudging(EAT_FALSE, BATTERY_TYPENULL);// stop this judgement
     }
 
     return (u8)percent;
@@ -180,33 +179,34 @@ static u8 battery_isAlarm(void)
 {
     static char batteryState = BATTERY_ALARM_NULL;
 
-    u32 voltage = battery_get_Voltage();
-    u8 percent = battery_getType_percent(voltage);
+    u8 percent = 0;
+    u32 voltage = 0;
+    u8 percent_untype = BATTERY_TYPENULL;
 
-    u8 percent_untype = battery_Judge_type(voltage);//judge new battery type
-    if(percent > MAX_PERCENT_NUM)//if battery type is not judged , get battery as no type
+    voltage = battery_get_Voltage();
+    if(0 == voltage)//if battery has not been detected
+    {
+        return BATTERY_ALARM_NULL;
+    }
+
+    percent_untype = battery_Judge_type(voltage);//judge new battery type
+    percent = battery_getType_percent(voltage);
+    if(percent > MAX_PERCENT_NUM)//if battery type has not judged , get battery as no type
     {
         percent = percent_untype;
     }
 
-    /* refresh the Voltage and Percent */
+    /*      refresh the Voltage and Percent of data module   */
     battery_setVoltage((u8)(ADvalue_2_Realvalue(voltage) + 0.5));
     battery_setPercent(percent);
 
-    if(70 < percent)    //battery > 70, assume as charge, reset and wait for reducing to 50
+    if(70 < percent)//battery > 70, assume as charge, reset and wait for reducing to 30
     {
         batteryState = BATTERY_ALARM_NULL;
     }
-    else if(50 > percent)
+    else if(30 > percent &&batteryState != BATTERY_ALARM_30)// battery < 30 and has not alarmed, alarm it
     {
-        if(30 < percent && batteryState != BATTERY_ALARM_50 && batteryState != BATTERY_ALARM_30)//30 < battery <50,alarm once,and wait for reducing to 30
-        {
-            return batteryState = BATTERY_ALARM_50;
-        }
-        else if(batteryState != BATTERY_ALARM_30)//30 < battery,alarm once,and do nothing
-        {
-            return batteryState = BATTERY_ALARM_30;
-        }
+        return batteryState = BATTERY_ALARM_30;
     }
 
     return BATTERY_ALARM_NULL;
@@ -242,11 +242,20 @@ static int battery_alarm_handler(void)
 */
 static void battery_event_adc(EatEvent_st *event)
 {
+    static int time_count = 0;
+
     if(event->data.adc.pin == ADC_VOLTAGE)
     {
         if(!Vibration_isMoved())
         {
-            battery_store_voltage(event->data.adc.v);
+            if(++time_count > 2 * 60 * (1000 / ADC_VOLTAGE_PERIOD))   //when stay for 2 mins, start to detect battery
+            {
+                battery_store_voltage(event->data.adc.v);
+            }
+        }
+        else
+        {
+            time_count = 0;
         }
     }
     else
