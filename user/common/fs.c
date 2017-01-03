@@ -142,6 +142,7 @@ static int fs_cat(const unsigned char* cmdString, unsigned short length)
     ascii2unicode(filename_w, filename);      //FIXME: overflow bug: the filename length may exceed MAX_FILENAME_LEN
 
     //TODO: to be completed
+    print("To be finished...");
     return rc;
 }
 
@@ -170,7 +171,7 @@ static int fs_tail(const unsigned char* cmdString, unsigned short length)
     fh = eat_fs_Open(filename_w, FS_READ_ONLY);
     if(EAT_FS_FILE_NOT_FOUND == fh)
     {
-        print("log file not exists.");
+        print("log file not exists.\n");
         return -1;
     }
 
@@ -184,14 +185,14 @@ static int fs_tail(const unsigned char* cmdString, unsigned short length)
     if (rc < EAT_FS_NO_ERROR)
     {
         eat_fs_Close(fh);
-        print("get file size failed: return %d", rc);
+        print("get file size failed: return %d\n", rc);
         return -1;
     }
 
     rc = eat_fs_Seek(fh, filesize > MAX_TAIL_SIZE ? filesize - MAX_TAIL_SIZE : 0, EAT_FS_FILE_BEGIN);
     if (rc < EAT_FS_NO_ERROR)
     {
-        print("seek file pointer failed:%d", rc);
+        print("seek file pointer failed:%d\n", rc);
         eat_fs_Close(fh);
 
         return -1;
@@ -200,7 +201,7 @@ static int fs_tail(const unsigned char* cmdString, unsigned short length)
     rc = eat_fs_Read(fh, buf, MAX_TAIL_SIZE, NULL);
     if (rc < EAT_FS_NO_ERROR)
     {
-        print("read file failed:%d", rc);
+        print("read file failed:%d\n", rc);
         eat_fs_Close(fh);
 
         return -1;

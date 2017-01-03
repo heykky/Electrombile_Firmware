@@ -379,7 +379,7 @@ eat_bool setting_restore(void)
     battery = cJSON_GetObjectItem(conf, TAG_BATTERY);
     if(!battery)
     {
-        LOG_ERROR("no battery config in setting file!");
+        LOG_INFO("no battery config in setting file!");
         eat_fs_Close(fh);
         free(buf);
         cJSON_Delete(conf);
@@ -440,7 +440,7 @@ eat_bool setting_save(void)
     cJSON_AddItemToObject(root, TAG_BATTERY, battery);
 
 
-    content = cJSON_Print(root);
+    content = cJSON_PrintUnformatted(root);
     LOG_DEBUG("save setting...");
 
     fh = eat_fs_Open(SETTINGFILE_NAME, FS_READ_WRITE|FS_CREATE);
