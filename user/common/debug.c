@@ -34,7 +34,7 @@ static int cmd_imsi(const unsigned char* cmdString, unsigned short length);
 static int cmd_chipid(const unsigned char* cmdString, unsigned short length);
 static int cmd_AT(const unsigned char* cmdString, unsigned short length);
 static int cmd_record(const unsigned char* cmdString, unsigned short length);
-
+static int cmd_PlayOut(const unsigned char* cmdString, unsigned short length);
 
 #ifdef APP_DEBUG
 static int cmd_reboot(const unsigned char* cmdString, unsigned short length);
@@ -53,6 +53,7 @@ static CMD_MAP cmd_map[MAX_CMD_NUMBER] =
         {"at",          cmd_AT},
         {"start",       cmd_record},
         {"stop",        cmd_record},
+        {"play",        cmd_PlayOut},
 #ifdef APP_DEBUG
         {"reboot",      cmd_reboot},
         {"halt",        cmd_halt},
@@ -109,6 +110,73 @@ static int cmd_chipid(const unsigned char* cmdString, unsigned short length)
         snprintf(chipid_desc + i * 2, 2, "%02X", chipid[i]);
     }
     DBG_OUT("chipd = %s", chipid_desc);
+    return 0;
+}
+
+static int cmd_PlayOut(const unsigned char* cmdString, unsigned short length)
+{
+#define READ_BUFFER_LENGTH  512
+#define MUSIC_NAME L"C:\\record.amr"
+    FS_HANDLE fh;
+    int rc = 0;
+    char buf[READ_BUFFER_LENGTH] = {0};
+    UINT readLen = 0;
+    int printlen = 0;
+    UINT filesize = 0;
+    int file_offset = 0;
+
+    fh = eat_fs_Open(MUSIC_NAME, FS_READ_ONLY);
+
+    //the log file is not found
+    if(EAT_FS_FILE_NOT_FOUND == fh)
+    {
+        print("log file not exists.");
+        file_offset = 0;
+        uart_setWrite(0);
+        return -1;
+    }
+
+    if (fh < EAT_FS_NO_ERROR)
+    {
+        print("open file failed, eat_fs_Open return %d!", fh);
+        file_offset = 0;
+        uart_setWrite(0);
+        return -1;
+    }
+
+    rc = eat_fs_GetFileSize(fh, &filesize);
+    if (rc < EAT_FS_NO_ERROR)
+    {
+        print("seek file pointer failed:%d", rc);
+        eat_fs_Close(fh);
+        return -1;
+    }
+
+    while(1)
+    {
+        rc = eat_fs_Seek(fh, file_offset, EAT_FS_FILE_BEGIN);
+        if (rc < EAT_FS_NO_ERROR)
+        {
+            print("seek file pointer failed:%d", rc);
+            eat_fs_Close(fh);
+            return -1;
+        }
+
+        rc = eat_fs_Read(fh, buf, READ_BUFFER_LENGTH, &readLen);
+        if (rc < EAT_FS_NO_ERROR)
+        {
+            print("read file failed:%d", rc);
+            eat_fs_Close(fh);
+            return -1;
+        }
+
+        printlen = eat_uart_write(EAT_UART_1,(const unsigned char *)buf, readLen);
+        file_offset += printlen;
+        if(file_offset >= filesize)break;
+    }
+
+    eat_fs_Close(fh);
+
     return 0;
 }
 

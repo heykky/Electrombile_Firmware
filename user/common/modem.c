@@ -29,7 +29,7 @@
 #define AT_CGNSINF  "AT+CGNSINF"
 #define AT_CCID     "AT+CCID"
 
-#define AT_START_RECORD "AT+CREC=1,\"C:\\record.amr\",0,0,0,0,0"
+#define AT_START_RECORD "AT+CREC=1,\"C:\\record.amr\",0,60,0,0,0" //amr format, 60 seconds limit
 #define AT_STOP_RECORD "AT+CREC=2"
 
 static eat_bool modem_cmd(const unsigned char *cmd)
