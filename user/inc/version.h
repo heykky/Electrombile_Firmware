@@ -23,8 +23,9 @@
  */
 
 #define VERSION_MAJOR   1
-#define VERSION_MINOR   2
-#define VERSION_MICRO   6
+#define VERSION_MINOR   3
+#define VERSION_MICRO   1
+
 
 #define VERSION_INT(a, b, c)    (a << 16 | b << 8 | c)
 #define VERSION_DOT(a, b, c)    a##.##b##.##c
