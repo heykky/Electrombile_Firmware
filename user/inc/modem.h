@@ -7,7 +7,7 @@
 
 #ifndef USER_INC_MODEM_H_
 #define USER_INC_MODEM_H_
-
+#include <eat_type.h>
 
 eat_bool modem_IsCallReady(char* modem_rsp);
 

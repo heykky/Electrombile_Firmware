@@ -367,7 +367,7 @@ static int event_mod_ready_rd(const EatEvent_st* event)
 	    LOG_ERROR("modem received nothing.");
 	    return -1;
 	}
-    LOG_DEBUG("modem recv: %s", buf);
+    print("modem recv: %s", buf);
     if(get_manager_ATcmd_state())
     {
         set_manager_ATcmd_state(EAT_FALSE);

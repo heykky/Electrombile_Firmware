@@ -35,9 +35,27 @@ static int fs_ls(const unsigned char* cmdString, unsigned short length)
     char filename[MAX_FILENAME_LEN];
     SINT64 size = 0;
     int rc = 0;
+    char directory[MAX_FILENAME_LEN] = {0};
+    WCHAR directory_w[MAX_FILENAME_LEN] = {0};
 
+    const unsigned char *directoryname = string_bypass(cmdString, "ls");
+    directoryname = string_trimLeft(directoryname);
+    strncpy(directory, directoryname, MAX_FILENAME_LEN);
+    string_trimRight(directory);
 
-    fh = eat_fs_FindFirst(L"C:\\*.*", 0, 0, &fileinfo, filename_w, sizeof(filename_w));
+    if(0 < strlen(directory))
+    {
+        strcat(directory,"\\*.*");
+        ascii2unicode(directory_w,directory);
+        print("%s:%s:%s",cmdString, directoryname, directory);
+        fh = eat_fs_FindFirst(directory_w, 0, 0, &fileinfo, filename_w, sizeof(filename_w));
+    }
+    else
+    {
+
+        fh = eat_fs_FindFirst(L"C:\\*.*", 0, 0, &fileinfo, filename_w, sizeof(filename_w));
+    }
+
 
     if (fh > 0)
     {
