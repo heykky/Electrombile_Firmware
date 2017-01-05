@@ -7,15 +7,9 @@
 #include "modem.h"
 #include "ftp.h"
 
-enum{
-    FTP_UPLOAD,
-    FTP_DOWNLOAD,
-}FTPTYPE;
-
 #define CR  "\r"    //CR (carriage return)
 #define AT_FTP_START    "AT+FTPCID=1"
 
-static int ftp_type = FTP_UPLOAD;
 static char ftp_localFileName[32] = {0};
 static char ftp_serverFileName[32] = {0};
 
@@ -23,16 +17,14 @@ void ftp_upload_file(char *localFileName, char *serverFileName)
 {
     strcpy(ftp_localFileName, localFileName);
     strcpy(ftp_serverFileName, serverFileName);
-    ftp_type = FTP_UPLOAD;
-    modem_AT(AT_FTP_START CR);
+    modem_AT(AT_FTP_START "\n");
 }
 
 void ftp_download_file(char *localFileName, char *serverFileName)
 {
     strcpy(ftp_localFileName, localFileName);
     strcpy(ftp_serverFileName, serverFileName);
-    ftp_type = FTP_DOWNLOAD;
-    modem_AT(AT_FTP_START CR);
+    modem_AT(AT_FTP_START "\n");
 }
 
 void ftp_modem_run(u8 * buf)
@@ -62,21 +54,21 @@ void ftp_modem_run(u8 * buf)
     {
         if(strstr(buf, "OK"))
         {
-            modem_AT("AT+FTPGETPATH=\"/home/\"" CR);
+            modem_AT("AT+FTPPUTPATH=\"/home/\"" CR);
         }
     }
-    else if(strstr(buf, "FTPGETPATH"))
+    else if(strstr(buf, "FTPPUTPATH"))
     {
         if(strstr(buf, "OK"))
         {
-            if(ftp_type == FTP_UPLOAD)
-            {
-                modem_AT("AT+FTPPUTFRMFS=\"c:\\log.old\"" CR);
-            }
-            else
-            {
-                modem_AT("AT+FTPGETTOFS=0,\"log.old\"" CR);
-            }
+            modem_AT("AT+FTPPUTFRMFS=\"c:\\log.old\"" CR);
+        }
+    }
+    else if (strstr(buf, "FTPGETPATH"))
+    {
+        if(strstr(buf, "OK"))
+        {
+            modem_AT("AT+FTPGETTOFS=0,\"log.old\"" CR);
         }
     }
     else if(strstr(buf, "FTPPUTFRMFS: 0"))
