@@ -15,6 +15,7 @@
 #include "utils.h"
 #include "version.h"
 #include "modem.h"
+#include "ftp.h"
 
 #define MAX_CMD_LENGTH (16)
 #define MAX_CMD_NUMBER  (32)
@@ -33,8 +34,12 @@ static int cmd_imei(const unsigned char* cmdString, unsigned short length);
 static int cmd_imsi(const unsigned char* cmdString, unsigned short length);
 static int cmd_chipid(const unsigned char* cmdString, unsigned short length);
 static int cmd_AT(const unsigned char* cmdString, unsigned short length);
-static int cmd_record(const unsigned char* cmdString, unsigned short length);
+static int cmd_startRecord(const unsigned char* cmdString, unsigned short length);
+static int cmd_stopRecord(const unsigned char* cmdString, unsigned short length);
 static int cmd_PlayOut(const unsigned char* cmdString, unsigned short length);
+
+static int cmd_upload(const unsigned char* cmdString, unsigned short length);
+static int cmd_download(const unsigned char* cmdString, unsigned short length);
 
 #ifdef APP_DEBUG
 static int cmd_reboot(const unsigned char* cmdString, unsigned short length);
@@ -51,9 +56,12 @@ static CMD_MAP cmd_map[MAX_CMD_NUMBER] =
         {"chipid",      cmd_chipid},
         {"AT",          cmd_AT},
         {"at",          cmd_AT},
-        {"start",       cmd_record},
-        {"stop",        cmd_record},
+        {"start",       cmd_startRecord},
+        {"stop",        cmd_stopRecord},
         {"play",        cmd_PlayOut},
+        {"upload",      cmd_upload},
+        {"download",    cmd_download},
+
 #ifdef APP_DEBUG
         {"reboot",      cmd_reboot},
         {"halt",        cmd_halt},
@@ -188,12 +196,29 @@ static int cmd_AT(const unsigned char* cmdString, unsigned short length)
     return 0;
 }
 
-static int cmd_record(const unsigned char* cmdString, unsigned short length)
+static int cmd_upload(const unsigned char* cmdString, unsigned short length)
 {
-    if(strstr(cmdString, "start"))modem_startRecord();
-    if(strstr(cmdString, "stop"))modem_stopRecord();
+    ftp_upload_file("NOTHING", "NOTHING");
     return 0;
 }
+
+static int cmd_download(const unsigned char* cmdString, unsigned short length)
+{
+    ftp_download_file("NOTHING", "NOTHING");
+    return 0;
+}
+
+static int cmd_startRecord(const unsigned char* cmdString, unsigned short length)
+{
+    modem_startRecord();
+    return 0;
+}
+static int cmd_stopRecord(const unsigned char* cmdString, unsigned short length)
+{
+    modem_stopRecord();
+    return 0;
+}
+
 
 #ifdef APP_DEBUG
 static int cmd_reboot(const unsigned char* cmdString, unsigned short length)
