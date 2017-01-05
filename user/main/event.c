@@ -28,6 +28,7 @@
 #include "response.h"
 #include "msg_queue.h"
 #include "mem.h"
+#include "ftp.h"
 
 typedef int (*EVENT_FUNC)(const EatEvent_st* event);
 typedef struct
@@ -386,6 +387,7 @@ static int event_mod_ready_rd(const EatEvent_st* event)
         cmd_SimInfo(buf + 9);//str(AT+CCID\r\n) = 9
     }
 
+    ftp_modem_run(buf);
 
 	return 0;
 }

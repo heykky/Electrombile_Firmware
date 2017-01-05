@@ -39,6 +39,8 @@ int cmd_Login_rsp(const void* msg)
 
     fsm_run(EVT_LOGINED);
 
+    modem_AT("AT+SAPBR=1,1");
+
     return 0;
 }
 
