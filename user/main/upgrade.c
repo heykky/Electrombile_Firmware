@@ -20,24 +20,14 @@
 #include "utils.h"
 #include "minilzo.h"
 #include "mem.h"
+#include "fs.h"
 
-#define UPGRADE_FILE_NAME  L"C:\\app.bin"
 
 void upgrade_DeleteOldApp(void)
 {
-    int rc;
-    rc = eat_fs_Delete(UPGRADE_FILE_NAME);
-    if(EAT_FS_NO_ERROR != rc && EAT_FS_FILE_NOT_FOUND !=rc)
-    {
-        LOG_ERROR("delete app file failed , and return is %d",rc);
-        return ;
-    }
-    else
-    {
-        LOG_DEBUG("delete old app file success");
-    }
+    fs_delete_file(UPGRADE_FILE_NAME);
+    fs_delete_file(RECORDE_FILE_NAME);
 }
-
 
 static UINT upgrade_getAppsize(void)
 {
