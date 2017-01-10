@@ -62,7 +62,7 @@ SETTING setting;
 #define TAG_IS_BATTERYTYPE_JUDGING "isbatterytype_judging"
 
 #define TAG_IS_VIBRATEFIXED "isVibrateFixed"
-#define TAGP_VIBRATE "defendstate"
+#define TAG_VIBRATE "defendstate"
 
 
 //the setting file format is as follow
@@ -152,6 +152,7 @@ static void setting_initial(void)
     setting.ipaddr[3] = 93;
 #endif
 
+    strncpy(setting.ftp_domain, "www.xiaoan110.com", MAX_DOMAIN_NAME_LEN);
     setting.port = 9880;
 
     /* Timer configuration */
@@ -395,7 +396,7 @@ eat_bool setting_restore(void)
     setting.BaterryType_Judging = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE_JUDGING)->valueint;
     setting.isBatteryJudging = cJSON_GetObjectItem(battery, TAG_IS_BATTERYTYPE_JUDGING)->valueint ? EAT_TRUE : EAT_FALSE;
 
-    defend_state = cJSON_GetObjectItem(conf, TAGP_VIBRATE);
+    defend_state = cJSON_GetObjectItem(conf, TAG_VIBRATE);
     if(!defend_state)
     {
         LOG_ERROR("no isVibrateFixed config in setting file!");
@@ -457,7 +458,7 @@ eat_bool setting_save(void)
     cJSON_AddItemToObject(root, TAG_BATTERY, battery);
 
     cJSON_AddNumberToObject(defend_state, TAG_IS_VIBRATEFIXED, setting.isVibrateFixed);
-    cJSON_AddItemToObject(root, TAGP_VIBRATE, defend_state);
+    cJSON_AddItemToObject(root, TAG_VIBRATE, defend_state);
 
     content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less
 

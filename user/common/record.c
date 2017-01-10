@@ -10,13 +10,15 @@
 #include "fs.h"
 #include "ftp.h"
 #include "log.h"
+#include "record.h"
 
-#define AT_START_RECORD "AT+CREC=1,\"C:\\record.amr\",0,60,0,0,0" //amr format, 60 seconds limit
+#define AT_START_RECORD_L "AT+CREC=1,\""
+#define AT_START_RECORD_R "\",0,60,0,0,0" //amr format, 60 seconds limit
 #define AT_STOP_RECORD "AT+CREC=2"
 
 eat_bool record_start(void)
 {
-    unsigned char* cmd = AT_START_RECORD CR;
+    unsigned char* cmd = AT_START_RECORD_L RECORD_FILE_NAME_CHAR AT_START_RECORD_R CR;
 
     fs_delete_file(UPGRADE_FILE_NAME);
     fs_delete_file(RECORDE_FILE_NAME);
@@ -39,7 +41,7 @@ void record_modem_run(u8 * buf)
     {
         eat_get_imei(imei, MAX_IMEI_LENGTH);
         snprintf(server_Filename, MAX_SERVERFILENAME_LEN, "%s_%d.amr", imei, rtc_getTimestamp());
-        ftp_upload_file("c:\\record.amr", server_Filename);
+        ftp_upload_file(RECORD_FILE_NAME_CHAR, server_Filename);
         LOG_INFO("start to upload record.amr : %s", server_Filename);
     }
 }

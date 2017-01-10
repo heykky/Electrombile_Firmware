@@ -12,6 +12,7 @@
 #include "log.h"
 #include "thread_msg.h"
 #include "thread.h"
+#include "setting.h"
 
 #define MAX_LOCALFILENAME_LEN 32
 #define MAX_FTPCMD_LEN 64
@@ -98,9 +99,11 @@ static void ftp_GPRScheck(u8 * buf)
 
 static void ftp_set_server(u8 * buf)
 {
+    unsigned char cmd[MAX_FTPCMD_LEN] = {0};
     if(strstr(buf, "OK"))
     {
-        modem_AT("AT+FTPSERV=\"test.xiaoan110.com\"" CR);
+        snprintf(cmd, MAX_FTPCMD_LEN, "AT+FTPSERV=\"%s\"\r", setting.ftp_domain);
+        modem_AT(cmd);
     }
     else
     {

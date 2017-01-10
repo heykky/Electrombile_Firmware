@@ -12,7 +12,7 @@
 #define SETTINGFILE_NAME  L"C:\\setting.conf"
 #define UPGRADE_FILE_NAME  L"C:\\app.bin"
 #define RECORDE_FILE_NAME L"C:\\record.amr"
-
+#define RECORD_FILE_NAME_CHAR "C:\\record.amr"
 
 void fs_initial(void);
 SINT64 fs_getDiskFreeSize(void);
