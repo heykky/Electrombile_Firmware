@@ -8,7 +8,7 @@
 
 #include "telecontrol.h"
 
-static void telecontrol_switchflag_initail(void)
+static void telecontrol_initSwitchState(void)
 {
     eat_gpio_setup(EAT_PIN60_COL2, EAT_GPIO_DIR_INPUT, EAT_GPIO_LEVEL_LOW); // electric switch flag default low
 }
@@ -45,7 +45,7 @@ void telecontrol_switch_off(void)
 
 void telecontrol_initail(void)
 {
-    telecontrol_switchflag_initail();
+    telecontrol_initSwitchState();
     telecontrol_break_initial();
     telecontrol_switch_initial();
 }
@@ -60,5 +60,10 @@ void telecontrol_unlock(void)
 {
     telecontrol_switch_on();
     telecontrol_switch_off();
+}
+
+int telecontrol_getSwitchState(void)
+{
+    return eat_gpio_read(EAT_PIN60_COL2);
 }
 
