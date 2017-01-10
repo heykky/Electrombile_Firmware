@@ -1,5 +1,5 @@
 /*
- * version.h
+ * telecontrol.h
  *
  *  Created on: 2017/1/10
  *      Author: lc
@@ -13,4 +13,4 @@ void telecontrol_unlock(void);
 void telecontrol_switch_off(void);
 void telecontrol_switch_on(void);
 
-#endif
+#endif/*__TELECONTROL_H__*/
