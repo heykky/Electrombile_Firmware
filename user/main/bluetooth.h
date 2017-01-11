@@ -8,7 +8,7 @@ typedef enum
 	BLUETOOTH_STATE_NOEXIST
 }BLUETOOTH_STATE;
 
-
+void ResetBluetoothState(void);
 void app_bluetooth_thread(void *data);
 
 

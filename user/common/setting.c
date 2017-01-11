@@ -64,6 +64,8 @@ SETTING setting;
 #define TAG_IS_VIBRATEFIXED "isVibrateFixed"
 #define TAG_VIBRATE "defendstate"
 
+#define TAG_BLUETOOTH_ID "bluetoothId"
+#define TAG_BLUETOOTH "bluetooth"
 
 //the setting file format is as follow
 //{
@@ -161,6 +163,7 @@ static void setting_initial(void)
     setting.seek_timer_period = 2000;
     setting.timeupdate_timer_peroid = 24 * 60 * 60 * 1000;      //24h * 60m * 60s * 1000ms
     setting.gps_send_period = 30 * 1000;
+    setting.bluetooth_scan_period = 15 * 1000;
 
     /* Switch configuration */
     setting.isVibrateFixed = EAT_FALSE;
@@ -174,6 +177,8 @@ static void setting_initial(void)
     setting.BatteryType = NULL;    //Initial default NULL,wait for certainly judge type
     setting.BaterryType_Judging = NULL;
     setting.isBatteryJudging = EAT_FALSE;
+
+    strncpy(setting.BluetoothId, "2c:8a:72:fb:8f:f9",BLUETOOTH_ID_LEN);
 
     return;
 }
@@ -251,6 +256,13 @@ void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype)
     setting_save();
 }
 
+void set_bluetooth_id(const char* BluetoothIdString)
+{
+    strncpy(setting.BluetoothId, BluetoothIdString, BLUETOOTH_ID_LEN);
+    setting_save();
+    LOG_DEBUG("SET BLUETOOTH ID OK\n");
+}
+
 
 eat_bool setting_restore(void)
 {
@@ -263,6 +275,7 @@ eat_bool setting_restore(void)
     cJSON *autolock = 0;
     cJSON *battery = 0;
     cJSON *defend_state = 0;
+    cJSON *bluetooth = 0;
 
     setting_initial();
 
@@ -407,6 +420,20 @@ eat_bool setting_restore(void)
     }
     setting.isVibrateFixed = cJSON_GetObjectItem(defend_state, TAG_IS_VIBRATEFIXED)->valueint ? EAT_TRUE : EAT_FALSE;
 
+    bluetooth = cJSON_GetObjectItem(conf, TAG_BLUETOOTH);
+    if(!bluetooth)
+    {
+        LOG_ERROR("no bluetooth config in setting file!");
+        eat_fs_Close(fh);
+        free(buf);
+        cJSON_Delete(conf);
+        return EAT_FALSE;
+    }
+    else
+    {
+        char *BluetoothId = cJSON_GetObjectItem(bluetooth, TAG_BLUETOOTH_ID)->valuestring;
+        strncpy(setting.BluetoothId, BluetoothId, BLUETOOTH_ID_LEN);
+    }
     LOG_DEBUG("BATTERY TYPE IS %d", setting.BatteryType);
 
     free(buf);
@@ -427,6 +454,7 @@ eat_bool setting_save(void)
     cJSON *autolock = cJSON_CreateObject();
     cJSON *battery = cJSON_CreateObject();
     cJSON *defend_state = cJSON_CreateObject();
+    cJSON *bluetooth = cJSON_CreateObject();
 
     char *content = 0;
 
@@ -459,6 +487,9 @@ eat_bool setting_save(void)
 
     cJSON_AddNumberToObject(defend_state, TAG_IS_VIBRATEFIXED, setting.isVibrateFixed);
     cJSON_AddItemToObject(root, TAG_VIBRATE, defend_state);
+
+    cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
+    cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
 
     content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less
 

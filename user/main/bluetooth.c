@@ -20,33 +20,39 @@
 #include "audio_source.h"
 
 
-#define BLUETOOTH_TIMER_PERIOD (15*1000)
 #define MAX_RECORDNAME_SIZE 128
 
 
-static char AcceptAddress[18] = "2c:8a:72:fb:8f:f9";
 static BLUETOOTH_STATE BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
 static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
 
-/*
-*fun:check the bluetooth address
-*/
-static int cmd_CheckBluetoothAddress(u8* buf)
-{
-    char GetAddress[18];
 
-    if(sscanf(buf, "%*s%*[^,],%*[^,],%*[^,],%[^,]", GetAddress)==1)
+
+/*
+*fun:reset the bluetooth state
+*/
+void ResetBluetoothState(void)
+{
+    BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
+    BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
+}
+
+/*
+*fun:check the bluetooth id
+*/
+static int cmd_CheckBluetoothId(u8* buf)
+{
+
+    if(strstr(buf,setting.BluetoothId)!=NULL)
     {
-        if(strcmp(AcceptAddress,GetAddress)==0)
-        {
-            LOG_DEBUG("Bluetooth address is %s\n",GetAddress);
-            BluetoothState_now = BLUETOOTH_STATE_EXIST;
-        }
-        else
-        {
-            LOG_DEBUG("Bluetooth address is %s\n",GetAddress);
-        }
+        LOG_DEBUG("PASS\n");
+        BluetoothState_now = BLUETOOTH_STATE_EXIST;
     }
+    else
+    {
+        LOG_DEBUG("NOPASS\n");
+    }
+
     return 0;
 }
 
@@ -77,7 +83,7 @@ static void app_bluescan_proc(void)
 */
 static eat_bool IsBluetoothScan(char* modem_rsp)
 {
-    char* ptr = strstr((const char *) modem_rsp, "+BTSCAN:");
+    char* ptr = strstr((const char *) modem_rsp, "+BTSCAN: 0");
 
     if(ptr)
     {
@@ -100,7 +106,7 @@ void app_bluetooth_thread(void *data)
     modem_AT("AT+BTPOWER=1\r");
 
     LOG_INFO("TIMER_BLUETOOTH_SCAN start.");
-    eat_timer_start(TIMER_BLUETOOTH_SCAN,BLUETOOTH_TIMER_PERIOD);
+    eat_timer_start(TIMER_BLUETOOTH_SCAN,setting.bluetooth_scan_period);
 
     while(EAT_TRUE)
 	{
@@ -112,7 +118,7 @@ void app_bluetooth_thread(void *data)
                 {
                     case TIMER_BLUETOOTH_SCAN:
                         app_bluescan_proc();
-                        eat_timer_start(event.data.timer.timer_id,BLUETOOTH_TIMER_PERIOD);
+                        eat_timer_start(event.data.timer.timer_id,setting.bluetooth_scan_period);
                         break;
 
                     default:
@@ -132,7 +138,7 @@ void app_bluetooth_thread(void *data)
                 LOG_DEBUG("modem recv: %s", buf);
                 if(IsBluetoothScan(buf))
                 {
-                    cmd_CheckBluetoothAddress(buf);
+                    cmd_CheckBluetoothId(buf);
                 }
                 break;
 
