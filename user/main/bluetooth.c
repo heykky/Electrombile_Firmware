@@ -17,6 +17,7 @@
 #include "modem.h"
 #include "bluetooth.h"
 #include "fs.h"
+#include "audio_source.h"
 
 
 #define BLUETOOTH_TIMER_PERIOD (15*1000)
@@ -56,12 +57,13 @@ static void app_bluescan_proc(void)
 {
     if(BluetoothState_now == BLUETOOTH_STATE_EXIST && BluetoothState_last == BLUETOOTH_STATE_NOEXIST)
     {
-        eat_audio_play_file(RECORDE_FILE_NAME, EAT_FALSE, NULL, 30, EAT_AUDIO_PATH_SPK1);
+        eat_audio_play_data(audio_BluetoothIsFound, sizeof(audio_BluetoothIsFound), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
         //event when bluetooth is found
     }
 
     if(BluetoothState_now == BLUETOOTH_STATE_NOEXIST && BluetoothState_last == BLUETOOTH_STATE_EXIST)
     {
+        eat_audio_play_data(audio_BluetoothIsLost, sizeof(audio_BluetoothIsLost), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
         //event when bluetooth is lost
     }
 
@@ -132,6 +134,10 @@ void app_bluetooth_thread(void *data)
                 {
                     cmd_CheckBluetoothAddress(buf);
                 }
+                break;
+
+            case EAT_EVENT_AUD_PLAY_FINISH_IND:
+                eat_audio_stop_data();
                 break;
 
             default:
