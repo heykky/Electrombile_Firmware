@@ -153,7 +153,7 @@ static int device_SetBluetoothId(const void* req, cJSON *param)
     }
     bluetoothId = cJSON_GetObjectItem(param, "bluetoothId");
     set_bluetooth_id(bluetoothId->valuestring);
-    ResetBluetoothState();
+    bt_resetBluetoothState();
     return device_responseOK(req);
 }
 

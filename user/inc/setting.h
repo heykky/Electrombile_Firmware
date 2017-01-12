@@ -41,7 +41,6 @@ typedef struct
         u32 seek_timer_period;
         u32 timeupdate_timer_peroid;
         u32 gps_send_period;
-        u32 bluetooth_scan_period;
     };
 
     //Switch configuration
@@ -60,7 +59,7 @@ typedef struct
     u8 BaterryType_Judging;
     eat_bool isBatteryJudging;
 
-    //bluetooth address
+    //bluetooth id
     char BluetoothId[BLUETOOTH_ID_LEN];
 
 }SETTING;

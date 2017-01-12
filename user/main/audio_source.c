@@ -1,6 +1,6 @@
-#ifndef AUDIO_SOURCE_H_
-#define AUDIO_SOURCE_H_
+#include <eat_type.h>
 
+#include "audio_source.h"
 
 const u8 audio_BluetoothIsFound[]=
 {/*hello.amr*/
@@ -168,6 +168,23 @@ const u8 audio_BluetoothIsLost[]=
   0x1F, 0xC0, 0x03, 0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00
 };
 
+const u8* audio_defaultAudioSource_found(void)
+{
+    return audio_BluetoothIsFound;
+}
 
-#endif/* AUDIO_SOURCE_H_ */
+const u8* audio_defaultAudioSource_lost(void)
+{
+    return audio_BluetoothIsLost;
+}
+
+unsigned int audio_sizeofDefaultAudioSource_found(void)
+{
+    return sizeof(audio_BluetoothIsFound);
+}
+
+unsigned int audio_sizeofDefaultAudioSource_lost(void)
+{
+    return sizeof(audio_BluetoothIsLost);
+}
 

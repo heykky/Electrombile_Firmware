@@ -2,12 +2,10 @@
 #include <eat_timer.h>
 #include <eat_interface.h>
 #include <eat_audio.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
 
-#include "thread_msg.h"
 #include "thread.h"
 #include "setting.h"
 #include "data.h"
@@ -19,7 +17,14 @@
 #include "fs.h"
 #include "audio_source.h"
 
+typedef enum
+{
+	BLUETOOTH_STATE_EXIST,
+	BLUETOOTH_STATE_NOEXIST
+}BLUETOOTH_STATE;
 
+
+#define BLUETOOTH_SCAN_PERIOD (15 * 1000)
 #define MAX_RECORDNAME_SIZE 128
 
 
@@ -27,11 +32,10 @@ static BLUETOOTH_STATE BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
 static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
 
 
-
 /*
 *fun:reset the bluetooth state
 */
-void ResetBluetoothState(void)
+void bt_resetBluetoothState(void)
 {
     BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
     BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
@@ -59,17 +63,17 @@ static int cmd_CheckBluetoothId(u8* buf)
 /*
 *fun:event bluetoothscan timer proc
 */
-static void app_bluescan_proc(void)
+static void BluetoothScan_proc(void)
 {
     if(BluetoothState_now == BLUETOOTH_STATE_EXIST && BluetoothState_last == BLUETOOTH_STATE_NOEXIST)
     {
-        eat_audio_play_data(audio_BluetoothIsFound, sizeof(audio_BluetoothIsFound), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
+        eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
         //event when bluetooth is found
     }
 
     if(BluetoothState_now == BLUETOOTH_STATE_NOEXIST && BluetoothState_last == BLUETOOTH_STATE_EXIST)
     {
-        eat_audio_play_data(audio_BluetoothIsLost, sizeof(audio_BluetoothIsLost), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
+        eat_audio_play_data(audio_defaultAudioSource_lost(), audio_sizeofDefaultAudioSource_lost(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
         //event when bluetooth is lost
     }
 
@@ -99,14 +103,14 @@ void app_bluetooth_thread(void *data)
     EatEvent_st event;
     MSG_THREAD* msg = 0;
     u8 buf[256] = {0};
-	u16 len = 0;
+    u16 len = 0;
 
 	LOG_INFO("bluetooth thread start.");
 
     modem_AT("AT+BTPOWER=1\r");
 
     LOG_INFO("TIMER_BLUETOOTH_SCAN start.");
-    eat_timer_start(TIMER_BLUETOOTH_SCAN,setting.bluetooth_scan_period);
+    eat_timer_start(TIMER_BLUETOOTH_SCAN,BLUETOOTH_SCAN_PERIOD);
 
     while(EAT_TRUE)
 	{
@@ -117,8 +121,8 @@ void app_bluetooth_thread(void *data)
                 switch (event.data.timer.timer_id)
                 {
                     case TIMER_BLUETOOTH_SCAN:
-                        app_bluescan_proc();
-                        eat_timer_start(event.data.timer.timer_id,setting.bluetooth_scan_period);
+                        BluetoothScan_proc();
+                        eat_timer_start(event.data.timer.timer_id,BLUETOOTH_SCAN_PERIOD);
                         break;
 
                     default:

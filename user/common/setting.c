@@ -163,7 +163,6 @@ static void setting_initial(void)
     setting.seek_timer_period = 2000;
     setting.timeupdate_timer_peroid = 24 * 60 * 60 * 1000;      //24h * 60m * 60s * 1000ms
     setting.gps_send_period = 30 * 1000;
-    setting.bluetooth_scan_period = 15 * 1000;
 
     /* Switch configuration */
     setting.isVibrateFixed = EAT_FALSE;
@@ -178,7 +177,7 @@ static void setting_initial(void)
     setting.BaterryType_Judging = NULL;
     setting.isBatteryJudging = EAT_FALSE;
 
-    strncpy(setting.BluetoothId, "2c:8a:72:fb:8f:f9",BLUETOOTH_ID_LEN);
+    strncpy(setting.BluetoothId, "00:00:00:00:00:00",BLUETOOTH_ID_LEN);
 
     return;
 }
@@ -344,97 +343,75 @@ eat_bool setting_restore(void)
     }
 
     addr = cJSON_GetObjectItem(conf, TAG_SERVER);
-    if (!addr)
+    if (addr)
     {
-        LOG_ERROR("no server config in setting file!");
-        eat_fs_Close(fh);
-        free(buf);
-        cJSON_Delete(conf);
-        return EAT_FALSE;
-    }
-    setting.addr_type = cJSON_GetObjectItem(addr, TAG_ADDR_TYPE)->valueint;
-    if (setting.addr_type == ADDR_TYPE_DOMAIN)
-    {
-        char *domain = cJSON_GetObjectItem(addr, TAG_ADDR)->valuestring;
-        LOG_DEBUG("restore domain name");
-        strncpy(setting.domain, domain, MAX_DOMAIN_NAME_LEN);
-    }
-    else
-    {
-        char *ipaddr = cJSON_GetObjectItem(addr, TAG_ADDR)->valuestring;
-        int ip[4] = {0};
-        int count = sscanf(ipaddr, "%u.%u.%u.%u", ip, ip + 1, ip + 2, ip + 3);
-
-        LOG_DEBUG("restore ip address");
-        if (count != 4) //4 means got four number of ip
+        setting.addr_type = cJSON_GetObjectItem(addr, TAG_ADDR_TYPE)->valueint;
+        if (setting.addr_type == ADDR_TYPE_DOMAIN)
         {
-            LOG_ERROR("restore ip address failed");
-            eat_fs_Close(fh);
-            free(buf);
-            cJSON_Delete(conf);
-            return EAT_FALSE;
+            char *domain = cJSON_GetObjectItem(addr, TAG_ADDR)->valuestring;
+
+            LOG_DEBUG("restore domain name");
+
+            strncpy(setting.domain, domain, MAX_DOMAIN_NAME_LEN);
         }
-        setting.ipaddr[0] = ip[0];
-        setting.ipaddr[1] = ip[1];
-        setting.ipaddr[2] = ip[2];
-        setting.ipaddr[3] = ip[3];
+        else
+        {
+            char *ipaddr = cJSON_GetObjectItem(addr, TAG_ADDR)->valuestring;
+            int ip[4] = {0};
+            int count = sscanf(ipaddr, "%u.%u.%u.%u", ip, ip + 1, ip + 2, ip + 3);
 
+            LOG_DEBUG("restore ip address");
+            if (count != 4) //4 means got four number of ip
+            {
+                LOG_ERROR("restore ip address failed");
+                eat_fs_Close(fh);
+                free(buf);
+                cJSON_Delete(conf);
+                return EAT_FALSE;
+            }
+            setting.ipaddr[0] = ip[0];
+            setting.ipaddr[1] = ip[1];
+            setting.ipaddr[2] = ip[2];
+            setting.ipaddr[3] = ip[3];
+
+        }
+
+        setting.port = cJSON_GetObjectItem(addr, TAG_PORT)->valueint;
     }
-
-    setting.port = cJSON_GetObjectItem(addr, TAG_PORT)->valueint;
 
     autolock = cJSON_GetObjectItem(conf, TAG_AUTOLOCK);
-    if (!autolock)
+    if (autolock)
     {
-        LOG_ERROR("no autolock config in setting file!");
-        eat_fs_Close(fh);
-        free(buf);
-        cJSON_Delete(conf);
-        return EAT_FALSE;
+        LOG_DEBUG("restore autolock conf");
+        setting.isAutodefendFixed = cJSON_GetObjectItem(autolock, TAG_LOCK)->valueint ? EAT_TRUE : EAT_FALSE;
+        setting.autodefendPeriod = cJSON_GetObjectItem(autolock, TAG_PERIOD)->valueint;
     }
-    setting.isAutodefendFixed = cJSON_GetObjectItem(autolock, TAG_LOCK)->valueint ? EAT_TRUE : EAT_FALSE;
-    setting.autodefendPeriod = cJSON_GetObjectItem(autolock, TAG_PERIOD)->valueint;
 
     battery = cJSON_GetObjectItem(conf, TAG_BATTERY);
-    if(!battery)
+    if(battery)
     {
-        LOG_INFO("no battery config in setting file!");
-        eat_fs_Close(fh);
-        free(buf);
-        cJSON_Delete(conf);
-        return EAT_FALSE;
+        LOG_DEBUG("restore battery conf");
+        setting.isUserType = cJSON_GetObjectItem(battery, TAG_ISUSERTYPE)->valueint ? EAT_TRUE : EAT_FALSE;
+        setting.BatteryType = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE)->valueint;
+        setting.BaterryType_Judging = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE_JUDGING)->valueint;
+        setting.isBatteryJudging = cJSON_GetObjectItem(battery, TAG_IS_BATTERYTYPE_JUDGING)->valueint ? EAT_TRUE : EAT_FALSE;
+        LOG_DEBUG("BATTERY TYPE IS %d", setting.BatteryType);
     }
-    setting.isUserType = cJSON_GetObjectItem(battery, TAG_ISUSERTYPE)->valueint ? EAT_TRUE : EAT_FALSE;
-    setting.BatteryType = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE)->valueint;
-    setting.BaterryType_Judging = cJSON_GetObjectItem(battery, TAG_BATTERYTYPE_JUDGING)->valueint;
-    setting.isBatteryJudging = cJSON_GetObjectItem(battery, TAG_IS_BATTERYTYPE_JUDGING)->valueint ? EAT_TRUE : EAT_FALSE;
 
     defend_state = cJSON_GetObjectItem(conf, TAG_VIBRATE);
-    if(!defend_state)
+    if(defend_state)
     {
-        LOG_ERROR("no isVibrateFixed config in setting file!");
-        eat_fs_Close(fh);
-        free(buf);
-        cJSON_Delete(conf);
-        return EAT_FALSE;
+        LOG_DEBUG("restore defend_state conf");
+        setting.isVibrateFixed = cJSON_GetObjectItem(defend_state, TAG_IS_VIBRATEFIXED)->valueint ? EAT_TRUE : EAT_FALSE;
     }
-    setting.isVibrateFixed = cJSON_GetObjectItem(defend_state, TAG_IS_VIBRATEFIXED)->valueint ? EAT_TRUE : EAT_FALSE;
 
     bluetooth = cJSON_GetObjectItem(conf, TAG_BLUETOOTH);
-    if(!bluetooth)
-    {
-        LOG_ERROR("no bluetooth config in setting file!");
-        eat_fs_Close(fh);
-        free(buf);
-        cJSON_Delete(conf);
-        return EAT_FALSE;
-    }
-    else
+    if(bluetooth)
     {
         char *BluetoothId = cJSON_GetObjectItem(bluetooth, TAG_BLUETOOTH_ID)->valuestring;
+        LOG_DEBUG("restore bluetooth conf");
         strncpy(setting.BluetoothId, BluetoothId, BLUETOOTH_ID_LEN);
     }
-    LOG_DEBUG("BATTERY TYPE IS %d", setting.BatteryType);
 
     free(buf);
     eat_fs_Close(fh);
@@ -488,8 +465,11 @@ eat_bool setting_save(void)
     cJSON_AddNumberToObject(defend_state, TAG_IS_VIBRATEFIXED, setting.isVibrateFixed);
     cJSON_AddItemToObject(root, TAG_VIBRATE, defend_state);
 
-    cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
-    cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
+    if(strcmp(setting.BluetoothId,"00:00:00:00:00:00")!=0)
+    {
+        cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
+        cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
+    }
 
     content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less
 
