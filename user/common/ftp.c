@@ -192,7 +192,7 @@ static void ftp_get_file(u8 * buf)
     unsigned char cmd[MAX_FTPCMD_LEN] = {0};
     if(strstr(buf, "OK"))
     {
-        snprintf(cmd, MAX_FTPCMD_LEN, "AT+FTPPUTFRMFS=\"%s\"\r", ftp_localFileName);
+        snprintf(cmd, MAX_FTPCMD_LEN, "AT+FTPGETTOFS=0,\"%s\"\r", ftp_localFileName);
         modem_AT(cmd);
     }
     else
