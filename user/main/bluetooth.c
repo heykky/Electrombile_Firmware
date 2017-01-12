@@ -24,12 +24,12 @@ typedef enum
 }BLUETOOTH_STATE;
 
 
-#define BLUETOOTH_SCAN_PERIOD (15 * 1000)
-#define MAX_RECORDNAME_SIZE 128
+#define BLUETOOTH_SCAN_PERIOD (20 * 1000)
 
 
 static BLUETOOTH_STATE BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
 static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
+static eat_bool PLAY_AUDIO_TYPE;//FALSE: play audio data  TRUE: play audio file
 
 
 /*
@@ -67,13 +67,29 @@ static void BluetoothScan_proc(void)
 {
     if(BluetoothState_now == BLUETOOTH_STATE_EXIST && BluetoothState_last == BLUETOOTH_STATE_NOEXIST)
     {
-        eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
+        if(eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 100, EAT_AUDIO_PATH_SPK1)!=0)
+        {
+            eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
+            PLAY_AUDIO_TYPE = EAT_FALSE;
+        }
+        else
+        {
+            PLAY_AUDIO_TYPE = EAT_TRUE;
+        }
         //event when bluetooth is found
     }
 
     if(BluetoothState_now == BLUETOOTH_STATE_NOEXIST && BluetoothState_last == BLUETOOTH_STATE_EXIST)
     {
-        eat_audio_play_data(audio_defaultAudioSource_lost(), audio_sizeofDefaultAudioSource_lost(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
+        if(eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 100, EAT_AUDIO_PATH_SPK1)!=0)
+        {
+            eat_audio_play_data(audio_defaultAudioSource_lost(), audio_sizeofDefaultAudioSource_lost(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
+            PLAY_AUDIO_TYPE = EAT_FALSE;
+        }
+        else
+        {
+            PLAY_AUDIO_TYPE = EAT_TRUE;
+        }
         //event when bluetooth is lost
     }
 
@@ -147,7 +163,14 @@ void app_bluetooth_thread(void *data)
                 break;
 
             case EAT_EVENT_AUD_PLAY_FINISH_IND:
-                eat_audio_stop_data();
+                if(PLAY_AUDIO_TYPE == EAT_FALSE)
+                {
+                    eat_audio_stop_data();
+                }
+                else if(PLAY_AUDIO_TYPE == EAT_TRUE)
+                {
+                    eat_audio_stop_file();
+                }
                 break;
 
             default:
