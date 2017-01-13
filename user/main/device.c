@@ -24,7 +24,6 @@
 #include "device.h"
 #include "record.h"
 #include "protocol.h"
-#include "bluetooth.h"
 
 enum
 {
@@ -148,13 +147,22 @@ static int device_StopRecord(const void* req, cJSON *param)
 static int device_SetBluetoothId(const void* req, cJSON *param)
 {
     cJSON *bluetoothId = NULL;
+    u8 msgLen = sizeof(MSG_THREAD);
+    MSG_THREAD *msg = NULL;
+
+    msg = allocMsg(msgLen);
+    msg->cmd = CMD_THREAD_BLUETOOTHRESET;
+    msg->length = 0;
+
     if(!param)
     {
         return device_responseERROR(req);
     }
     bluetoothId = cJSON_GetObjectItem(param, "bluetoothId");
     set_bluetooth_id(bluetoothId->valuestring);
-    bt_resetBluetoothState();
+
+    sendMsg(THREAD_BLUETOOTH, msg, msgLen);
+
     return device_responseOK(req);
 }
 

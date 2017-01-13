@@ -20,6 +20,7 @@ enum CMD
     CMD_THREAD_LOCATION,
     CMD_THREAD_AUTOLOCK,
     CMD_THREAD_PUTEND,
+    CMD_THREAD_BLUETOOTHRESET,
 };
 
 
@@ -94,6 +95,7 @@ typedef struct
     char code;
     char fileName[];
 }__attribute__((__packed__))FTP_PUTFILE_INFO;
+
 
 
 

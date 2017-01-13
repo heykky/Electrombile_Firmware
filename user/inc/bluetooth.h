@@ -3,7 +3,6 @@
 
 
 
-void bt_resetBluetoothState(void);
 void app_bluetooth_thread(void *data);
 
 

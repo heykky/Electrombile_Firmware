@@ -35,7 +35,7 @@ static eat_bool PLAY_AUDIO_TYPE;//FALSE: play audio data  TRUE: play audio file
 /*
 *fun:reset the bluetooth state
 */
-void bt_resetBluetoothState(void)
+static void ResetBluetoothState(void)
 {
     BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
     BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
@@ -160,6 +160,20 @@ void app_bluetooth_thread(void *data)
                 {
                     cmd_CheckBluetoothId(buf);
                 }
+                break;
+
+            case EAT_EVENT_USER_MSG:
+                msg = (MSG_THREAD*) event.data.user_msg.data_p;
+                switch (msg->cmd)
+                {
+                    case CMD_THREAD_BLUETOOTHRESET:
+                        ResetBluetoothState();
+                        break;
+                    default:
+                        LOG_ERROR("cmd(%d) not processed!", msg->cmd);
+                        break;
+                }
+                freeMsg(msg);
                 break;
 
             case EAT_EVENT_AUD_PLAY_FINISH_IND:
