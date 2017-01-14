@@ -148,10 +148,10 @@ static void setting_initial(void)
     strncpy(setting.domain, "www.xiaoan110.com",MAX_DOMAIN_NAME_LEN);
 #else
     setting.addr_type = ADDR_TYPE_IP;
-    setting.ipaddr[0] = 121;
-    setting.ipaddr[1] = 42;
-    setting.ipaddr[2] = 38;
-    setting.ipaddr[3] = 93;
+    setting.ipaddr[0] = 118;
+    setting.ipaddr[1] = 89;
+    setting.ipaddr[2] = 104;
+    setting.ipaddr[3] = 30;
 #endif
 
     strncpy(setting.ftp_domain, "www.xiaoan110.com", MAX_DOMAIN_NAME_LEN);
