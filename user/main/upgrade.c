@@ -21,6 +21,7 @@
 #include "minilzo.h"
 #include "mem.h"
 #include "fs.h"
+#include "flash.h"
 
 
 void upgrade_DeleteOldApp(void)
@@ -280,7 +281,6 @@ static int upgrade_execute(const void *data, unsigned int len)
 {
     u32 APP_DATA_RUN_BASE;  //app run addr
     u32 APP_DATA_STORAGE_BASE;  //app data storage addr
-    u32 app_space_value;
 
     eat_bool rc;
 
@@ -288,11 +288,7 @@ static int upgrade_execute(const void *data, unsigned int len)
     APP_DATA_RUN_BASE = eat_get_app_base_addr(); //get app addr
     LOG_DEBUG("APP_DATA_RUN_BASE : %#x",APP_DATA_RUN_BASE);
 
-    app_space_value = eat_get_app_space();  //get app space size
-    LOG_DEBUG("app_space_value : %#x", app_space_value);
-
-    APP_DATA_STORAGE_BASE = APP_DATA_RUN_BASE + (app_space_value>>1);//second half is space use to storage app_upgrade_data
-
+    APP_DATA_STORAGE_BASE = APP_DATA_RUN_BASE + UPGRADE_DATA_OFFSET;// offset: 150K, size 150K
 
     rc = eat_flash_erase((void*)APP_DATA_STORAGE_BASE , len);//erase the flash to write new app_data_storage
     if(EAT_FALSE == rc)
@@ -307,6 +303,8 @@ static int upgrade_execute(const void *data, unsigned int len)
         LOG_ERROR("Write Flash Failed.");
         return rc;
     }
+
+    fs_delete_file(UPGRADE_FILE_NAME);
 
     //upgrade app
     eat_update_app((void*)(APP_DATA_RUN_BASE),(void*)(APP_DATA_STORAGE_BASE), len, EAT_PIN_NUM, EAT_PIN_NUM,EAT_FALSE);
