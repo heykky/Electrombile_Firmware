@@ -12,15 +12,13 @@
 #include "thread_msg.h"
 #include "audio_source.h"
 
+#define BLUETOOTH_SCAN_PERIOD (20 * 1000) // 20s for once
+
 typedef enum
 {
 	BLUETOOTH_STATE_EXIST,
 	BLUETOOTH_STATE_NOEXIST
 }BLUETOOTH_STATE;
-
-
-#define BLUETOOTH_SCAN_PERIOD (20 * 1000)
-
 
 static BLUETOOTH_STATE BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
 static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
@@ -29,7 +27,7 @@ static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
 /*
 *fun:reset the bluetooth state
 */
-static void ResetBluetoothState(void)
+static void bluetooth_resetState(void)
 {
     BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
     BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
@@ -38,7 +36,7 @@ static void ResetBluetoothState(void)
 /*
 *fun:check the bluetooth id
 */
-static int bluetooth_CheckId(u8* buf)
+static int bluetooth_checkId(u8* buf)
 {
     if(strstr((const char *) buf, "+BTSCAN: 0") && strstr(buf,setting.BluetoothId))
     {
@@ -53,27 +51,24 @@ static int bluetooth_CheckId(u8* buf)
     return 0;
 }
 
-/*
-*fun:event bluetoothscan timer proc
-*/
-static void BluetoothScan_proc(void)
+static void bluetooth_scanHandler(void)
 {
+    //event when bluetooth is found
     if(BluetoothState_now == BLUETOOTH_STATE_EXIST && BluetoothState_last == BLUETOOTH_STATE_NOEXIST)
     {
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 100, EAT_AUDIO_PATH_SPK1))
         {
             eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 100, EAT_AUDIO_PATH_SPK1);
         }
-        //event when bluetooth is found
     }
 
+    //event when bluetooth is lost
     if(BluetoothState_now == BLUETOOTH_STATE_NOEXIST && BluetoothState_last == BLUETOOTH_STATE_EXIST)
     {
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 100, EAT_AUDIO_PATH_SPK1))
         {
             eat_audio_play_data(audio_defaultAudioSource_lost(), audio_sizeofDefaultAudioSource_lost(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
         }
-        //event when bluetooth is lost
     }
 
     BluetoothState_last = BluetoothState_now;
@@ -88,7 +83,7 @@ static void bluetooth_mod_ready_rd(void)
     {
         LOG_DEBUG("modem recv: %s", buf);
 
-        bluetooth_CheckId(buf);
+        bluetooth_checkId(buf);
     }
 }
 
@@ -97,7 +92,7 @@ void app_bluetooth_thread(void *data)
     EatEvent_st event;
     MSG_THREAD* msg = 0;
 
-	LOG_INFO("bluetooth thread start.");
+	LOG_DEBUG("bluetooth thread start.");
 
     modem_AT("AT+BTPOWER=1" CR);
 
@@ -113,8 +108,8 @@ void app_bluetooth_thread(void *data)
                 switch (event.data.timer.timer_id)
                 {
                     case TIMER_BLUETOOTH_SCAN:
-                        BluetoothScan_proc();
-                        eat_timer_start(event.data.timer.timer_id,BLUETOOTH_SCAN_PERIOD);
+                        bluetooth_scanHandler();
+                        eat_timer_start(event.data.timer.timer_id, BLUETOOTH_SCAN_PERIOD);
                         break;
 
                     default:
@@ -132,7 +127,7 @@ void app_bluetooth_thread(void *data)
                 switch (msg->cmd)
                 {
                     case CMD_THREAD_BLUETOOTHRESET:
-                        ResetBluetoothState();
+                        bluetooth_resetState();
                         break;
                     default:
                         LOG_ERROR("cmd(%d) not processed!", msg->cmd);
