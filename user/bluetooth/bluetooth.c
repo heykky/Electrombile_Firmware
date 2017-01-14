@@ -76,6 +76,14 @@ static void bluetooth_scanHandler(void)
     modem_AT("AT+BTSCAN=1,10\r");
 }
 
+static void bluetooth_stopSound(void)
+{
+    if(EAT_TRUE != eat_audio_stop_data())
+    {
+        eat_audio_stop_file();
+    }
+}
+
 static void bluetooth_mod_ready_rd(void)
 {
     u8 buf[256] = {0};
@@ -137,10 +145,7 @@ void app_bluetooth_thread(void *data)
                 break;
 
             case EAT_EVENT_AUD_PLAY_FINISH_IND:
-                if(eat_audio_stop_data() == EAT_FALSE)
-                {
-                    eat_audio_stop_file();
-                }
+                bluetooth_stopSound();
                 break;
 
             default:
