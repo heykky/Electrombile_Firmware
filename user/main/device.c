@@ -27,16 +27,18 @@
 
 enum
 {
-    DEVICE_GET_DEVICEINFO   = 0,
-    DEVICE_GET_LOCATE       = 1,
-    DEVICE_SET_AUTOLOCK     = 2,
-    DEVICE_GET_AUTOLOCK     = 3,
-    DEVICE_SET_DEFENDSTATE  = 4,
-    DEVICE_GET_DEFENDSTATE  = 5,
-    DEVICE_GET_BATTERY      = 6,
-    DEVICE_SET_BATTERYTYPE  = 7,
-    DEVICE_START_RECORD     = 8,
-    DEVICE_STOP_RECORD      = 9,
+    DEVICE_GET_DEVICEINFO    = 0,
+    DEVICE_GET_LOCATE        = 1,
+    DEVICE_SET_AUTOLOCK      = 2,
+    DEVICE_GET_AUTOLOCK      = 3,
+    DEVICE_SET_DEFENDSTATE   = 4,
+    DEVICE_GET_DEFENDSTATE   = 5,
+    DEVICE_GET_BATTERY       = 6,
+    DEVICE_SET_BATTERYTYPE   = 7,
+    DEVICE_START_RECORD      = 8,
+    DEVICE_STOP_RECORD       = 9,
+    DEVICE_SET_BLUETOOTHID   = 10,
+    DEVICE_DOWNLOAD_AUDIOFILE= 12,
 }DEVICE_CMD_NAME;
 
 typedef int (*DEVICE_PROC)(const void*, cJSON*);
@@ -62,6 +64,24 @@ static int device_responseOK(const void* req)
     socket_sendDataDirectly(msg, length);
     return 0;
 }
+
+static int device_responseERROR(const void* req)
+{
+    char *buf = "{\"code\":110}";
+    int length = sizeof(MSG_DEVICE_RSP) + strlen(buf);
+
+    MSG_DEVICE_RSP *msg = alloc_device_msg(req, length);
+    if(!msg)
+    {
+        LOG_ERROR("device inner error");
+        return -1;
+    }
+    strncpy(msg->data, buf, strlen(buf));
+
+    socket_sendDataDirectly(msg, length);
+    return 0;
+}
+
 
 static int device_GetDeviceInfo(const void* req, cJSON *param)
 {
@@ -124,18 +144,65 @@ static int device_StopRecord(const void* req, cJSON *param)
     return device_responseOK(req);
 }
 
+static int device_SetBluetoothId(const void* req, cJSON *param)
+{
+    cJSON *bluetoothId = NULL;
+    u8 msgLen = sizeof(MSG_THREAD);
+    MSG_THREAD *msg = NULL;
+
+    msg = allocMsg(msgLen);
+    msg->cmd = CMD_THREAD_BLUETOOTHRESET;
+    msg->length = 0;
+
+    if(!param)
+    {
+        return device_responseERROR(req);
+    }
+    bluetoothId = cJSON_GetObjectItem(param, "bluetoothId");
+    set_bluetooth_id(bluetoothId->valuestring);
+
+    sendMsg(THREAD_BLUETOOTH, msg, msgLen);
+
+    return device_responseOK(req);
+}
+
+static int device_DownloadAudioFile(const void* req, cJSON *param)
+{
+    cJSON *use = NULL;
+    cJSON *fileName = NULL;
+    char fileNameString [32]= {0};
+    if(!param)
+    {
+        return device_responseERROR(req);
+    }
+    use = cJSON_GetObjectItem(param, "use");
+    fileName = cJSON_GetObjectItem(param, "fileName");
+    strncpy(fileNameString, fileName->valuestring,32);
+    if(use->valueint == 0)
+    {
+        ftp_download_file("close_audio.amr", fileNameString);
+    }
+    else if(use->valueint == 1)
+    {
+        ftp_download_file("far_audio.amr", fileNameString);
+    }
+    return device_responseOK(req);
+}
+
 static DEVICE_MSG_PROC deviceProcs[] =
 {
-    {DEVICE_GET_DEVICEINFO, device_GetDeviceInfo},
-    {DEVICE_GET_LOCATE,     device_GetLocation},
-    {DEVICE_SET_AUTOLOCK,   device_SetAutolock},
-    {DEVICE_GET_AUTOLOCK,   device_GetAutolock},
-    {DEVICE_SET_DEFENDSTATE,device_SetDeffend},
-    {DEVICE_GET_DEFENDSTATE,device_GetDeffend},
-    {DEVICE_GET_BATTERY,    device_GetBattery},
-    {DEVICE_SET_BATTERYTYPE,device_SetBatteryType},
-    {DEVICE_START_RECORD,   device_StartRecord},
-    {DEVICE_STOP_RECORD,    device_StopRecord},
+    {DEVICE_GET_DEVICEINFO,    device_GetDeviceInfo},
+    {DEVICE_GET_LOCATE,        device_GetLocation},
+    {DEVICE_SET_AUTOLOCK,      device_SetAutolock},
+    {DEVICE_GET_AUTOLOCK,      device_GetAutolock},
+    {DEVICE_SET_DEFENDSTATE,   device_SetDeffend},
+    {DEVICE_GET_DEFENDSTATE,   device_GetDeffend},
+    {DEVICE_GET_BATTERY,       device_GetBattery},
+    {DEVICE_SET_BATTERYTYPE,   device_SetBatteryType},
+    {DEVICE_START_RECORD,      device_StartRecord},
+    {DEVICE_STOP_RECORD,       device_StopRecord},
+    {DEVICE_SET_BLUETOOTHID,   device_SetBluetoothId},
+    {DEVICE_DOWNLOAD_AUDIOFILE,device_DownloadAudioFile}
 };
 
 int cmd_device_handler(const void* msg)

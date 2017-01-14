@@ -11,6 +11,7 @@
 #include <eat_type.h>
 
 #define MAX_DOMAIN_NAME_LEN 32
+#define BLUETOOTH_ID_LEN 18
 typedef enum
 {
 	ADDR_TYPE_IP,
@@ -58,6 +59,8 @@ typedef struct
     u8 BaterryType_Judging;
     eat_bool isBatteryJudging;
 
+    //bluetooth id
+    char BluetoothId[BLUETOOTH_ID_LEN];
 
 }SETTING;
 
@@ -81,6 +84,8 @@ void set_battery_type(unsigned char batterytype);
 unsigned char get_batterytype_Judging(void);
 eat_bool get_battery_isJudging(void);
 void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype);
+void set_bluetooth_id(const char* BluetoothIdString);
+
 
 eat_bool setting_restore(void);
 eat_bool setting_save(void);
