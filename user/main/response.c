@@ -455,6 +455,8 @@ int cmd_DefendOn_rsp(const void* msg)
     LOG_DEBUG("set defend switch on.");
 
     Reset_AlarmCount();
+    telecontrol_switch_off();
+
     set_vibration_state(EAT_TRUE);
     if(EAT_TRUE != vibration_fixed())
     {
@@ -484,6 +486,8 @@ int cmd_DefendOff_rsp(const void* msg)
     LOG_DEBUG("set defend switch off.");
 
     ResetVibrationTime();
+    telecontrol_switch_on();
+
     set_vibration_state(EAT_FALSE);
     if(EAT_FALSE != vibration_fixed())
     {
