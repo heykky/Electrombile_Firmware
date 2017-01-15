@@ -14,14 +14,8 @@
 
 #define BLUETOOTH_SCAN_PERIOD (20 * 1000) // 20s for once
 
-typedef enum
-{
-	BLUETOOTH_STATE_EXIST,
-	BLUETOOTH_STATE_NOEXIST
-}BLUETOOTH_STATE;
-
-static BLUETOOTH_STATE BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
-static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
+static eat_bool isBluetoothInRange_now = EAT_FALSE;
+static eat_bool isBluetoothInRange_pre = EAT_FALSE;
 
 
 /*
@@ -29,8 +23,8 @@ static BLUETOOTH_STATE BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
 */
 static void bluetooth_resetState(void)
 {
-    BluetoothState_last = BLUETOOTH_STATE_NOEXIST;
-    BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
+    isBluetoothInRange_now = EAT_FALSE
+    isBluetoothInRange_pre = EAT_FALSE;
 }
 
 /*
@@ -41,7 +35,7 @@ static int bluetooth_checkId(u8* buf)
     if(strstr((const char *) buf, "+BTSCAN: 0") && strstr(buf,setting.BluetoothId))
     {
         LOG_DEBUG("PASS");
-        BluetoothState_now = BLUETOOTH_STATE_EXIST;
+        isBluetoothInRange_now = EAT_TRUE;
     }
     else
     {
@@ -54,7 +48,7 @@ static int bluetooth_checkId(u8* buf)
 static void bluetooth_scanHandler(void)
 {
     //event when bluetooth is found
-    if(BluetoothState_now == BLUETOOTH_STATE_EXIST && BluetoothState_last == BLUETOOTH_STATE_NOEXIST)
+    if(isBluetoothInRange_now && !isBluetoothInRange_pre)
     {
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 100, EAT_AUDIO_PATH_SPK1))
         {
@@ -63,7 +57,7 @@ static void bluetooth_scanHandler(void)
     }
 
     //event when bluetooth is lost
-    if(BluetoothState_now == BLUETOOTH_STATE_NOEXIST && BluetoothState_last == BLUETOOTH_STATE_EXIST)
+    if(!isBluetoothInRange_now && isBluetoothInRange_pre)
     {
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 100, EAT_AUDIO_PATH_SPK1))
         {
@@ -71,9 +65,10 @@ static void bluetooth_scanHandler(void)
         }
     }
 
-    BluetoothState_last = BluetoothState_now;
-    BluetoothState_now = BLUETOOTH_STATE_NOEXIST;
-    modem_AT("AT+BTSCAN=1,10\r");
+    isBluetoothInRange_pre = isBluetoothInRange_now;
+    isBluetoothInRange_now = EAT_FALSE;
+
+    modem_AT("AT+BTSCAN=1,10" CR);
 }
 
 static void bluetooth_stopSound(void)
@@ -87,7 +82,8 @@ static void bluetooth_stopSound(void)
 static void bluetooth_mod_ready_rd(void)
 {
     u8 buf[256] = {0};
-    if (0 != eat_modem_read(buf, 256))
+
+    if (eat_modem_read(buf, 256))
     {
         LOG_DEBUG("modem recv: %s", buf);
 
