@@ -1,3 +1,9 @@
+/*
+ * bluetooth.h
+ *
+ *  Created on: 2017/01/15
+ *      Author: kky
+ */
 #include <stdio.h>
 #include <string.h>
 #include <eat_interface.h>
@@ -73,6 +79,8 @@ static void bluetooth_scanHandler(void)
 
 static void bluetooth_stopSound(void)
 {
+    LOG_DEBUG("EAT_EVENT_AUD_PLAY_FINISH_IND happen");
+
     if(EAT_TRUE != eat_audio_stop_data())
     {
         eat_audio_stop_file();
