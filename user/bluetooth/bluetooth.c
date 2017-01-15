@@ -29,7 +29,7 @@ static eat_bool isBluetoothInRange_pre = EAT_FALSE;
 */
 static void bluetooth_resetState(void)
 {
-    isBluetoothInRange_now = EAT_FALSE
+    isBluetoothInRange_now = EAT_FALSE;
     isBluetoothInRange_pre = EAT_FALSE;
 }
 
