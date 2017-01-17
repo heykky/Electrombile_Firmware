@@ -9,10 +9,13 @@
 #include <string.h>
 
 #include <eat_interface.h>
+#include <eat_fs.h>
 #include "cJSON.h"
 
 #include "client.h"
 #include "socket.h"
+#include "fs.h"
+#include "ftp.h"
 #include "msg.h"
 #include "log.h"
 #include "uart.h"
@@ -185,15 +188,22 @@ static int device_DownloadAudioFile(const void* req, cJSON *param)
         return device_responseERROR(req);
     }
     use = cJSON_GetObjectItem(param, "use");
-    fileName = cJSON_GetObjectItem(param, "fileName");
-    strncpy(fileNameString, fileName->valuestring,32);
     if(use->valueint == 0)
     {
+        fileName = cJSON_GetObjectItem(param, "fileName");
+        strncpy(fileNameString, fileName->valuestring,32);
         ftp_download_file("close_audio.amr", fileNameString);
     }
     else if(use->valueint == 1)
     {
+        fileName = cJSON_GetObjectItem(param, "fileName");
+        strncpy(fileNameString, fileName->valuestring,32);
         ftp_download_file("far_audio.amr", fileNameString);
+    }
+    else if(use->valueint == 3)
+    {
+        eat_fs_Delete(AUDIO_FILE_NAME_FOUND);
+        eat_fs_Delete(AUDIO_FILE_NAME_LOST);
     }
     return device_responseOK(req);
 }
