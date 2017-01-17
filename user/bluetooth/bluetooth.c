@@ -99,6 +99,11 @@ static void bluetooth_mod_ready_rd(void)
     }
 }
 
+static void bluetooth_startAlarm(void)
+{
+    eat_audio_play_data(audio_defaultAlarm(), audio_sizeofDefaultAlarm(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+}
+
 void app_bluetooth_thread(void *data)
 {
     EatEvent_st event;
@@ -143,6 +148,9 @@ void app_bluetooth_thread(void *data)
                 {
                     case CMD_THREAD_BLUETOOTHRESET:
                         bluetooth_resetState();
+                        break;
+                    case CMD_THREAD_STARTALARM:
+                        bluetooth_startAlarm();
                         break;
                     default:
                         LOG_ERROR("cmd(%d) not processed!", msg->cmd);
