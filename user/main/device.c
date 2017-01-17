@@ -28,6 +28,7 @@
 #include "record.h"
 #include "protocol.h"
 #include "telecontrol.h"
+#include "audio_source.h"
 
 enum
 {
@@ -218,7 +219,7 @@ static int device_SetBlutoothSwitch(const void* req, cJSON *param)
     }
 
     bluetoothSwitch = cJSON_GetObjectItem(param, "sw");
-    set_bluetooth_switch(bluetoothSwitch->valueint);
+    set_bluetooth_switch(bluetoothSwitch->valueint?EAT_TRUE:EAT_FALSE);
 
     return device_responseOK(req);
 }

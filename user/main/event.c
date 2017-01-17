@@ -29,6 +29,8 @@
 #include "mem.h"
 #include "ftp.h"
 #include "audio_source.h"
+#include "seek.h"
+#include "record.h"
 
 typedef int (*EVENT_FUNC)(const EatEvent_st* event);
 typedef struct

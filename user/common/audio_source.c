@@ -325,6 +325,7 @@ static const u8 audio_Alarm[]=
 int audio_StartAlarmSound(void)
 {
     eat_audio_play_data(audio_Alarm, sizeof(audio_Alarm), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+    return 0;
 }
 
 int audio_bluetoothFoundSound(void)
@@ -333,6 +334,7 @@ int audio_bluetoothFoundSound(void)
     {
         eat_audio_play_data(audio_BluetoothFound_Source, sizeof(audio_BluetoothFound_Source), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
     }
+    return 0;
 }
 
 int audio_bluetoothLostSound(void)
@@ -341,6 +343,7 @@ int audio_bluetoothLostSound(void)
     {
         eat_audio_play_data(audio_BluetoothLost_Source, sizeof(audio_BluetoothLost_Source), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
     }
+    return 0;
 }
 
 int audio_stopSound(void)
@@ -349,6 +352,7 @@ int audio_stopSound(void)
     {
         eat_audio_stop_file();
     }
+    return 0;
 }
 
 
