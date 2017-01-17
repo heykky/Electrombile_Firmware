@@ -64,7 +64,29 @@ static eat_bool vivration_AutolockStateSend(eat_bool state)
     return ret;
 }
 
-static eat_bool vibration_sendAlarm(void)
+static eat_bool vibration_sendAlarm(int cmd)
+{
+    u8 msgLen = sizeof(MSG_THREAD) + sizeof(ALARM_INFO);
+    MSG_THREAD *msg = NULL;
+    ALARM_INFO *msg_data = NULL;
+
+    msg = allocMsg(msgLen);
+    if(!msg)
+    {
+        LOG_ERROR("alloc memory error");
+        return EAT_FALSE;
+    }
+    msg_data = (ALARM_INFO*)msg->data;
+
+    msg->cmd = CMD_THREAD_ALARM;
+    msg->length = sizeof(ALARM_INFO);
+    msg_data->alarm_type = cmd;
+
+    LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
+    return sendMsg(THREAD_MAIN, msg, msgLen);
+}
+
+static eat_bool vibration_alarm_move(void)
 {
     u8 msgLen = sizeof(MSG_THREAD) + sizeof(ALARM_INFO);
     MSG_THREAD *msg = NULL;
@@ -73,15 +95,8 @@ static eat_bool vibration_sendAlarm(void)
     Add_AlarmCount();
     if(Get_AlarmCount() < 2)
     {
-        msg = allocMsg(msgLen);
-        msg_data = (ALARM_INFO*)msg->data;
-
-        msg->cmd = CMD_THREAD_ALARM;
-        msg->length = sizeof(ALARM_INFO);
-        msg_data->alarm_type = ALARM_VIBRATE;
-
-        LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
-        return sendMsg(THREAD_MAIN, msg, msgLen);
+        set_vibration_state(EAT_FALSE);// if alarm, set the vibration state as defend off
+        return vibration_sendAlarm(ALARM_VIBRATE);
     }
 
     return EAT_FALSE;
@@ -89,48 +104,12 @@ static eat_bool vibration_sendAlarm(void)
 
 static eat_bool vibration_alarm_cutoff(void)
 {
-    u8 msgLen = sizeof(MSG_THREAD) + sizeof(ALARM_INFO);
-    MSG_THREAD *msg = NULL;
-    ALARM_INFO *msg_data = NULL;
-
-    msg = allocMsg(msgLen);
-    if(!msg)
-    {
-        LOG_ERROR("alloc memory error");
-        return EAT_FALSE;
-    }
-    msg_data = (ALARM_INFO*)msg->data;
-
-    msg->cmd = CMD_THREAD_ALARM;
-    msg->length = sizeof(ALARM_INFO);
-    msg_data->alarm_type = ALARM_BAT_CUT;
-
-    LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
-    return sendMsg(THREAD_MAIN, msg, msgLen);
-
+    return vibration_sendAlarm(ALARM_BAT_CUT);
 }
 
-static eat_bool vibration_alarm_switchStateChange(void)
+static eat_bool vibration_alarm_switchOpen(void)
 {
-    u8 msgLen = sizeof(MSG_THREAD) + sizeof(ALARM_INFO);
-    MSG_THREAD *msg = NULL;
-    ALARM_INFO *msg_data = NULL;
-
-    msg = allocMsg(msgLen);
-    if(!msg)
-    {
-        LOG_ERROR("alloc memory error");
-        return EAT_FALSE;
-    }
-    msg_data = (ALARM_INFO*)msg->data;
-
-    msg->cmd = CMD_THREAD_ALARM;
-    msg->length = sizeof(ALARM_INFO);
-    msg_data->alarm_type = ALARM_SWITCH_CHANGE;
-
-    LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
-    return sendMsg(THREAD_MAIN, msg, msgLen);
-
+    return vibration_sendAlarm(ALARM_SWITCH_CHANGE);
 }
 
 static void move_alarm_timer_handler()
@@ -182,7 +161,7 @@ static void move_alarm_timer_handler()
             {
                 if(EAT_TRUE == vibration_fixed())
                 {
-                    vibration_sendAlarm();
+                    vibration_alarm_move();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, x_data[i]);
                 }
                 return;
@@ -199,7 +178,7 @@ static void move_alarm_timer_handler()
             {
                 if(EAT_TRUE == vibration_fixed())
                 {
-                    vibration_sendAlarm();
+                    vibration_alarm_move();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, y_data[i]);
                 }
                 return;
@@ -219,7 +198,7 @@ static void move_alarm_timer_handler()
             {
                 if(EAT_TRUE == vibration_fixed())
                 {
-                    vibration_sendAlarm();
+                    vibration_alarm_move();
                     LOG_DEBUG("MOVE_TRESHOLD_Z[%d]   = %f",i, z_data[i]);
                 }
                 return;
@@ -312,7 +291,7 @@ static void vibration_switchState_handler(void)
     {
         if(EAT_GPIO_LEVEL_LOW == last_switchState && EAT_GPIO_LEVEL_HIGH == switchState)
         {
-            vibration_alarm_switchStateChange();
+            vibration_alarm_switchOpen();
         }
     }
     last_switchState = switchState;
