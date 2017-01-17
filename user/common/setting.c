@@ -67,19 +67,6 @@ SETTING setting;
 #define TAG_BLUETOOTH_ID "bluetoothId"
 #define TAG_BLUETOOTH "bluetooth"
 
-//the setting file format is as follow
-//{
-//    "SERVER":   {
-//        "ADDR_TYPE":    1,
-//        "ADDR": "www.xiaoantech.com",
-//        "PORT": 9880
-//    },
-//    "autolock": {
-//        "autolock": true,
-//        "period":   15
-//    }
-//}
-
 
 static int setting_changeServer(const unsigned char* cmdString, unsigned short length)
 {
@@ -177,7 +164,8 @@ static void setting_initial(void)
     setting.BaterryType_Judging = NULL;
     setting.isBatteryJudging = EAT_FALSE;
 
-    strncpy(setting.BluetoothId, "00:00:00:00:00:00",BLUETOOTH_ID_LEN);
+    setting.BluetoothSwitch = EAT_TRUE;
+    strncpy(setting.BluetoothId, "10:2a:b3:73:2b:b8,-83",BLUETOOTH_ID_LEN);
 
     return;
 }
@@ -259,9 +247,20 @@ void set_bluetooth_id(const char* BluetoothIdString)
 {
     strncpy(setting.BluetoothId, BluetoothIdString, BLUETOOTH_ID_LEN);
     setting_save();
-    LOG_DEBUG("SET BLUETOOTH ID OK\n");
+    LOG_DEBUG("set bluetooth ID: %s", setting.BluetoothId);
 }
 
+void set_bluetooth_switch(eat_bool sw)
+{
+    setting.BluetoothSwitch = sw;
+    setting_save();
+    LOG_DEBUG("set bluetooth switch: %d", sw);
+}
+
+eat_bool is_bluetoothOn(void)
+{
+    return setting.BluetoothSwitch;
+}
 
 eat_bool setting_restore(void)
 {

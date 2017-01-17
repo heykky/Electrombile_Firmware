@@ -120,7 +120,10 @@ void app_bluetooth_thread(void *data)
                 switch (event.data.timer.timer_id)
                 {
                     case TIMER_BLUETOOTH_SCAN:
-                        bluetooth_scanHandler();
+                        if(is_bluetoothOn())
+                        {
+                            bluetooth_scanHandler();
+                        }
                         eat_timer_start(event.data.timer.timer_id, BLUETOOTH_SCAN_PERIOD);
                         break;
 

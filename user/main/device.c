@@ -24,6 +24,7 @@
 #include "device.h"
 #include "record.h"
 #include "protocol.h"
+#include "telecontrol.h"
 
 enum
 {
@@ -39,6 +40,9 @@ enum
     DEVICE_STOP_RECORD       = 9,
     DEVICE_SET_BLUETOOTHID   = 10,
     DEVICE_DOWNLOAD_AUDIOFILE= 12,
+    DEVICE_SET_BLUETOOTHSW   = 13,
+    DEVICE_START_ALARM       = 14,
+    DEVICE_CONTROL_LOCK      = 15,
 }DEVICE_CMD_NAME;
 
 typedef int (*DEVICE_PROC)(const void*, cJSON*);
@@ -189,6 +193,48 @@ static int device_DownloadAudioFile(const void* req, cJSON *param)
     return device_responseOK(req);
 }
 
+static int device_SetBlutoothSwitch(const void* req, cJSON *param)
+{
+    cJSON *bluetoothSwitch = NULL;
+
+    if(!param)
+    {
+        return device_responseERROR(req);
+    }
+
+    bluetoothSwitch = cJSON_GetObjectItem(param, "sw");
+    set_bluetooth_switch(bluetoothSwitch->valueint);
+
+    return device_responseOK(req);
+}
+
+static int device_StartAlarm(const void* req, cJSON *param)
+{
+    return device_responseOK(req);
+}
+
+static int device_ControlCarLocked(const void* req, cJSON *param)
+{
+    cJSON *Switch = NULL;
+
+    if(!param)
+    {
+        return device_responseERROR(req);
+    }
+
+    Switch = cJSON_GetObjectItem(param, "sw");
+    if(1 == Switch->valueint)
+    {
+        telecontrol_lock();
+    }
+    else
+    {
+        telecontrol_unlock();
+    }
+
+    return device_responseOK(req);
+}
+
 static DEVICE_MSG_PROC deviceProcs[] =
 {
     {DEVICE_GET_DEVICEINFO,    device_GetDeviceInfo},
@@ -202,7 +248,10 @@ static DEVICE_MSG_PROC deviceProcs[] =
     {DEVICE_START_RECORD,      device_StartRecord},
     {DEVICE_STOP_RECORD,       device_StopRecord},
     {DEVICE_SET_BLUETOOTHID,   device_SetBluetoothId},
-    {DEVICE_DOWNLOAD_AUDIOFILE,device_DownloadAudioFile}
+    {DEVICE_DOWNLOAD_AUDIOFILE,device_DownloadAudioFile},
+    {DEVICE_SET_BLUETOOTHSW,   device_SetBlutoothSwitch},
+    {DEVICE_START_ALARM,       device_StartAlarm},
+    {DEVICE_CONTROL_LOCK,      device_ControlCarLocked}
 };
 
 int cmd_device_handler(const void* msg)
