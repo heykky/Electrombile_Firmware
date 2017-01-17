@@ -18,7 +18,7 @@
 #include "thread_msg.h"
 #include "audio_source.h"
 
-#define BLUETOOTH_SCAN_PERIOD (20 * 1000) // 20s for once
+#define BLUETOOTH_TIMER_PERIOD (1 * 1000) // 1s for once
 
 static eat_bool isBluetoothInRange_now = EAT_FALSE;
 static eat_bool isBluetoothInRange_pre = EAT_FALSE;
@@ -51,10 +51,9 @@ static int bluetooth_checkId(u8* buf)
     return 0;
 }
 
-static void bluetooth_scanHandler(void)
+static void bluetooth_scanResultProc(void)
 {
-    //event when bluetooth is found
-    if(isBluetoothInRange_now && !isBluetoothInRange_pre)
+    if(isBluetoothInRange_now && !isBluetoothInRange_pre)//event when bluetooth is found
     {
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
         {
@@ -62,8 +61,7 @@ static void bluetooth_scanHandler(void)
         }
     }
 
-    //event when bluetooth is lost
-    if(!isBluetoothInRange_now && isBluetoothInRange_pre)
+    if(!isBluetoothInRange_now && isBluetoothInRange_pre)//event when bluetooth is lost
     {
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
         {
@@ -73,8 +71,25 @@ static void bluetooth_scanHandler(void)
 
     isBluetoothInRange_pre = isBluetoothInRange_now;
     isBluetoothInRange_now = EAT_FALSE;
+}
 
-    modem_AT("AT+BTSCAN=1,10" CR);
+static void bluetooth_timerHandler(void)
+{
+    static int time = 0;
+
+    time++;
+
+    if(time == 10)
+    {
+        modem_AT("AT+BTSCAN=0" CR);//stop
+    }
+    if(time == 12)
+    {
+        bluetooth_scanResultProc();
+        modem_AT("AT+BTSCAN=1,10" CR);//start
+        time = 0;
+    }
+
 }
 
 static void bluetooth_stopSound(void)
@@ -109,7 +124,7 @@ void app_bluetooth_thread(void *data)
     modem_AT("AT+BTPOWER=1" CR);
 
     LOG_INFO("TIMER_BLUETOOTH_SCAN start.");
-    eat_timer_start(TIMER_BLUETOOTH_SCAN,BLUETOOTH_SCAN_PERIOD);
+    eat_timer_start(TIMER_BLUETOOTH_SCAN, BLUETOOTH_TIMER_PERIOD);
 
     while(EAT_TRUE)
 	{
@@ -122,9 +137,9 @@ void app_bluetooth_thread(void *data)
                     case TIMER_BLUETOOTH_SCAN:
                         if(is_bluetoothOn())
                         {
-                            bluetooth_scanHandler();
+                            bluetooth_timerHandler();
                         }
-                        eat_timer_start(event.data.timer.timer_id, BLUETOOTH_SCAN_PERIOD);
+                        eat_timer_start(event.data.timer.timer_id, BLUETOOTH_TIMER_PERIOD);
                         break;
 
                     default:
