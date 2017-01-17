@@ -18,6 +18,7 @@
 #include "mma8652.h"
 #include "led.h"
 #include "data.h"
+#include "telecontrol.h"
 
 #define MAX_MOVE_DATA_LEN   500
 #define MOVE_TIMER_PERIOD    10
@@ -103,6 +104,29 @@ static eat_bool vibration_alarm_cutoff(void)
     msg->cmd = CMD_THREAD_ALARM;
     msg->length = sizeof(ALARM_INFO);
     msg_data->alarm_type = ALARM_BAT_CUT;
+
+    LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
+    return sendMsg(THREAD_MAIN, msg, msgLen);
+
+}
+
+static eat_bool vibration_alarm_switchStateChange(void)
+{
+    u8 msgLen = sizeof(MSG_THREAD) + sizeof(ALARM_INFO);
+    MSG_THREAD *msg = NULL;
+    ALARM_INFO *msg_data = NULL;
+
+    msg = allocMsg(msgLen);
+    if(!msg)
+    {
+        LOG_ERROR("alloc memory error");
+        return EAT_FALSE;
+    }
+    msg_data = (ALARM_INFO*)msg->data;
+
+    msg->cmd = CMD_THREAD_ALARM;
+    msg->length = sizeof(ALARM_INFO);
+    msg_data->alarm_type = ALARM_SWITCH_CHANGE;
 
     LOG_DEBUG("vibration alarm:cmd(%d),length(%d),data(%d)", msg->cmd, msg->length, msg_data->alarm_type);
     return sendMsg(THREAD_MAIN, msg, msgLen);
@@ -278,10 +302,26 @@ static void vibration_cutoff_handler(void)
     last_level = pin_level;
 }
 
+static void vibration_switchState_handler(void)
+{
+    static EatGpioLevel_enum last_switchState = EAT_GPIO_LEVEL_LOW;
+
+    EatGpioLevel_enum switchState = telecontrol_getSwitchState();
+    if(vibration_fixed())
+    {
+        if(EAT_GPIO_LEVEL_LOW == last_switchState && EAT_GPIO_LEVEL_HIGH == switchState)
+        {
+            vibration_alarm_switchStateChange();
+        }
+    }
+    last_switchState = switchState;
+}
+
 static void vibration_oneSecond_Loop(void)
 {
     vibration_move_handler();
     vibration_cutoff_handler();
+    vibration_switchState_handler();
 }
 
 void app_vibration_thread(void *data)
