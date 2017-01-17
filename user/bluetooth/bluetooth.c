@@ -55,18 +55,12 @@ static void bluetooth_scanResultProc(void)
 {
     if(isBluetoothInRange_now && !isBluetoothInRange_pre)//event when bluetooth is found
     {
-        if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
-        {
-            eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
-        }
+        audio_bluetoothFoundSound();
     }
 
     if(!isBluetoothInRange_now && isBluetoothInRange_pre)//event when bluetooth is lost
     {
-        if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
-        {
-            eat_audio_play_data(audio_defaultAudioSource_lost(), audio_sizeofDefaultAudioSource_lost(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
-        }
+        audio_bluetoothLostSound();
     }
 
     isBluetoothInRange_pre = isBluetoothInRange_now;
@@ -89,17 +83,6 @@ static void bluetooth_timerHandler(void)
         modem_AT("AT+BTSCAN=1,10" CR);//start
         time = 0;
     }
-
-}
-
-static void bluetooth_stopSound(void)
-{
-    LOG_DEBUG("EAT_EVENT_AUD_PLAY_FINISH_IND happen");
-
-    if(EAT_TRUE != eat_audio_stop_data())
-    {
-        eat_audio_stop_file();
-    }
 }
 
 static void bluetooth_mod_ready_rd(void)
@@ -112,11 +95,6 @@ static void bluetooth_mod_ready_rd(void)
 
         bluetooth_checkId(buf);
     }
-}
-
-static void bluetooth_startAlarm(void)
-{
-    eat_audio_play_data(audio_defaultAlarm(), audio_sizeofDefaultAlarm(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
 }
 
 void app_bluetooth_thread(void *data)
@@ -164,9 +142,7 @@ void app_bluetooth_thread(void *data)
                     case CMD_THREAD_BLUETOOTHRESET:
                         bluetooth_resetState();
                         break;
-                    case CMD_THREAD_STARTALARM:
-                        bluetooth_startAlarm();
-                        break;
+
                     default:
                         LOG_ERROR("cmd(%d) not processed!", msg->cmd);
                         break;
@@ -175,7 +151,10 @@ void app_bluetooth_thread(void *data)
                 break;
 
             case EAT_EVENT_AUD_PLAY_FINISH_IND:
-                bluetooth_stopSound();
+                {
+                   LOG_DEBUG("EAT_EVENT_AUD_PLAY_FINISH_IND happen");
+                   audio_stopSound();
+                }
                 break;
 
             default:

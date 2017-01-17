@@ -1,14 +1,10 @@
 #ifndef USER_AUDIO_SOURCE_H_
 #define USER_AUDIO_SOURCE_H_
 
-const u8* audio_defaultAudioSource_found(void);
-const u8* audio_defaultAudioSource_lost(void);
-const u8* audio_defaultAlarm(void);
-
-unsigned int audio_sizeofDefaultAudioSource_found(void);
-unsigned int audio_sizeofDefaultAudioSource_lost(void);
-unsigned int audio_sizeofDefaultAlarm(void);
-
+int audio_StartAlarmSound(void);
+int audio_bluetoothFoundSound(void);
+int audio_bluetoothLostSound(void);
+int audio_stopSound(void);
 
 #endif /* USER_AUDIO_SOURCE_H_ */
 

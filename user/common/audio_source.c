@@ -1,8 +1,9 @@
-#include <eat_type.h>
+#include <eat_interface.h>
 
+#include "fs.h"
 #include "audio_source.h"
 
-const u8 audio_BluetoothIsFound[]=
+static const u8 audio_BluetoothFound_Source[]=
 {/*hello.amr*/
   0x23, 0x21, 0x41, 0x4D, 0x52, 0x0A, 0x2C, 0xB4, 0x00, 0x9A, 0x00, 0x1E, 0x79, 0xFF, 0xE1, 0x84,
   0x67, 0x80, 0x1F, 0xC0, 0x03, 0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00, 0x2C, 0xE3, 0xA5, 0x6F, 0x2A,
@@ -91,7 +92,7 @@ const u8 audio_BluetoothIsFound[]=
   0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00
 };
 
-const u8 audio_BluetoothIsLost[]=
+static const u8 audio_BluetoothLost_Source[]=
 {/*goodbye.amr*/
   0x23, 0x21, 0x41, 0x4D, 0x52, 0x0A, 0x2C, 0xB4, 0x00, 0x9A, 0x00, 0x1E, 0x79, 0xFF, 0xE1, 0x84,
   0x67, 0x80, 0x1F, 0xC0, 0x03, 0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00, 0x2C, 0xE3, 0xA5, 0x6F, 0x2A,
@@ -168,7 +169,7 @@ const u8 audio_BluetoothIsLost[]=
   0x1F, 0xC0, 0x03, 0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00
 };
 
-const u8 audio_Alarm[]=
+static const u8 audio_Alarm[]=
 {/*alarm.amr*/
   0x23, 0x21, 0x41, 0x4D, 0x52, 0x0A, 0x2C, 0x8B, 0x1C, 0x4E, 0x00, 0x1E, 0x79, 0xFF, 0xE1, 0x96,
   0x67, 0x80, 0x1F, 0xC0, 0x03, 0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00, 0x2C, 0x75, 0x1C, 0xBD, 0x08,
@@ -321,33 +322,33 @@ const u8 audio_Alarm[]=
   0x66, 0x00, 0x1F, 0xC0, 0x03, 0xFF, 0xE8, 0x20, 0x82, 0x00, 0x00
 };
 
-const u8* audio_defaultAudioSource_found(void)
+int audio_StartAlarmSound(void)
 {
-    return audio_BluetoothIsFound;
+    eat_audio_play_data(audio_Alarm, sizeof(audio_Alarm), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
 }
 
-const u8* audio_defaultAudioSource_lost(void)
+int audio_bluetoothFoundSound(void)
 {
-    return audio_BluetoothIsLost;
+    if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
+    {
+        eat_audio_play_data(audio_BluetoothFound_Source, sizeof(audio_BluetoothFound_Source), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+    }
 }
 
-const u8* audio_defaultAlarm(void)
+int audio_bluetoothLostSound(void)
 {
-    return audio_Alarm;
+    if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
+    {
+        eat_audio_play_data(audio_BluetoothLost_Source, sizeof(audio_BluetoothLost_Source), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+    }
 }
 
-unsigned int audio_sizeofDefaultAudioSource_found(void)
+int audio_stopSound(void)
 {
-    return sizeof(audio_BluetoothIsFound);
+    if(EAT_TRUE != eat_audio_stop_data())
+    {
+        eat_audio_stop_file();
+    }
 }
 
-unsigned int audio_sizeofDefaultAudioSource_lost(void)
-{
-    return sizeof(audio_BluetoothIsLost);
-}
-
-unsigned int audio_sizeofDefaultAlarm(void)
-{
-    return sizeof(audio_Alarm);
-}
 

@@ -225,18 +225,7 @@ static int device_SetBlutoothSwitch(const void* req, cJSON *param)
 
 static int device_StartAlarm(const void* req, cJSON *param)
 {
-    u8 msgLen = sizeof(MSG_THREAD);
-    MSG_THREAD *msg = NULL;
-
-    msg = allocMsg(msgLen);
-    if(!msg)
-    {
-        return device_responseERROR(req);
-    }
-    msg->cmd = CMD_THREAD_STARTALARM;
-    msg->length = 0;
-
-    sendMsg(THREAD_BLUETOOTH, msg, msgLen);
+    audio_StartAlarmSound();
 
     return device_responseOK(req);
 }
