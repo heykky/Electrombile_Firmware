@@ -64,8 +64,9 @@ SETTING setting;
 #define TAG_IS_VIBRATEFIXED "isVibrateFixed"
 #define TAG_VIBRATE "defendstate"
 
-#define TAG_BLUETOOTH_ID "bluetoothId"
 #define TAG_BLUETOOTH "bluetooth"
+#define TAG_BLUETOOTH_ID "bluetoothId"
+#define TAG_BLUETOOTH_SWICTH  "bluetoothswitch"
 
 
 static int setting_changeServer(const unsigned char* cmdString, unsigned short length)
@@ -165,7 +166,7 @@ static void setting_initial(void)
     setting.isBatteryJudging = EAT_FALSE;
 
     setting.BluetoothSwitch = EAT_TRUE;
-    strncpy(setting.BluetoothId, "10:2a:b3:73:2b:b8,-83",BLUETOOTH_ID_LEN);
+    strncpy(setting.BluetoothId, "10:2a:b3:73:2b:b8,-83", BLUETOOTH_ID_LEN);
 
     return;
 }
@@ -410,6 +411,7 @@ eat_bool setting_restore(void)
         char *BluetoothId = cJSON_GetObjectItem(bluetooth, TAG_BLUETOOTH_ID)->valuestring;
         LOG_DEBUG("restore bluetooth conf");
         strncpy(setting.BluetoothId, BluetoothId, BLUETOOTH_ID_LEN);
+        setting.BluetoothSwitch = cJSON_GetObjectItem(bluetooth, TAG_BLUETOOTH_SWICTH)->valueint ? EAT_TRUE : EAT_FALSE;
     }
 
     free(buf);
@@ -464,11 +466,9 @@ eat_bool setting_save(void)
     cJSON_AddNumberToObject(defend_state, TAG_IS_VIBRATEFIXED, setting.isVibrateFixed);
     cJSON_AddItemToObject(root, TAG_VIBRATE, defend_state);
 
-    if(strcmp(setting.BluetoothId,"00:00:00:00:00:00")!=0)
-    {
-        cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
-        cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
-    }
+    cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
+    cJSON_AddNumberToObject(bluetooth, TAG_BLUETOOTH_SWICTH, setting.BluetoothSwitch);
+    cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
 
     content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less
 
