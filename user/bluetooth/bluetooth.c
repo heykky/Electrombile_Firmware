@@ -10,6 +10,7 @@
 
 #include "fs.h"
 #include "log.h"
+#include "data.h"
 #include "timer.h"
 #include "modem.h"
 #include "thread.h"
@@ -20,17 +21,15 @@
 
 #define BLUETOOTH_TIMER_PERIOD (1 * 1000) // 1s for once
 
-static eat_bool isBluetoothInRange_now = EAT_FALSE;
-static eat_bool isBluetoothInRange_pre = EAT_FALSE;
-
+static eat_bool isHostAtNear = EAT_FALSE;
+static eat_bool isBluetoothFound = EAT_FALSE;
 
 /*
 *fun:reset the bluetooth state
 */
 static void bluetooth_resetState(void)
 {
-    isBluetoothInRange_now = EAT_FALSE;
-    isBluetoothInRange_pre = EAT_FALSE;
+    isHostAtNear = EAT_FALSE;
 }
 
 /*
@@ -40,51 +39,15 @@ static int bluetooth_checkId(u8* buf)
 {
     if(strstr((const char *)buf, "+BTSCAN: 0") && strstr((const char *)buf,setting.BluetoothId))
     {
-        LOG_DEBUG("PASS");
-        isBluetoothInRange_now = EAT_TRUE;
+        if(!isHostAtNear)
+        {
+            isHostAtNear = EAT_TRUE;
+            telecontrol_switch_on();
+            audio_bluetoothFoundSound();
+        }
+        isBluetoothFound = EAT_TRUE;
     }
-    else
-    {
-        LOG_DEBUG("NOPASS");
-    }
-
     return 0;
-}
-
-static void bluetooth_scanResultProc(void)
-{
-    if(isBluetoothInRange_now && !isBluetoothInRange_pre)//event when bluetooth is found
-    {
-        audio_bluetoothFoundSound();
-    }
-
-    if(!isBluetoothInRange_now && isBluetoothInRange_pre)//event when bluetooth is lost
-    {
-        audio_bluetoothLostSound();
-    }
-
-    isBluetoothInRange_pre = isBluetoothInRange_now;
-    isBluetoothInRange_now = EAT_FALSE;
-}
-
-static void bluetooth_scanProc(void)
-{
-    static int time = 0;
-    static eat_bool isFirst = EAT_TRUE;
-
-    time++;
-
-    if(time == 10 && !isFirst)
-    {
-        modem_AT("AT+BTSCAN=0" CR);//stop scan
-    }
-    if(time == 12)
-    {
-        isFirst = EAT_FALSE;
-        bluetooth_scanResultProc();
-        modem_AT("AT+BTSCAN=1,10" CR);//start scan
-        time = 0;
-    }
 }
 
 static void bluetooth_mod_ready_rd(void)
@@ -99,12 +62,46 @@ static void bluetooth_mod_ready_rd(void)
     }
 }
 
+static void bluetooth_ScanProc(int time)
+{
+    static int count = 0;
+    static eat_bool isScaning = EAT_FALSE;
+
+    if(!isScaning)
+    {
+        isScaning = EAT_TRUE;
+        isBluetoothFound = EAT_FALSE;
+        modem_AT("AT+BTSCAN=1,10" CR);// start scan
+    }
+
+    if(time % 10 == 0)
+    {
+        isScaning = EAT_FALSE;
+        modem_AT("AT+BTSCAN=0" CR);// stop scan
+    }
+
+    if(isBluetoothFound)
+    {
+        count = 0;
+    }
+    else if(count++ > 60)// if last 60s not find host, as far away
+    {
+        isHostAtNear = EAT_FALSE;
+    }
+}
+
+
 static void bluetooth_onesecondLoop(void)
 {
-    if(is_bluetoothOn())
+    static int time = 0;
+
+    time++;
+
+    if(is_bluetoothOn() && !Vibration_isMoved)
     {
-        bluetooth_scanProc();
+        bluetooth_ScanProc(time);
     }
+
 }
 
 void app_bluetooth_thread(void *data)

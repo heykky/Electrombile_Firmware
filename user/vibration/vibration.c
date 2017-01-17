@@ -18,6 +18,7 @@
 #include "mma8652.h"
 #include "led.h"
 #include "data.h"
+#include "telecontrol.h"
 
 #define MAX_MOVE_DATA_LEN   500
 #define MOVE_TIMER_PERIOD    10
@@ -259,6 +260,7 @@ static void vibration_move_handler(void)
                     set_vibration_state(EAT_TRUE);
                 }
             }
+            telecontrol_switch_off();
             Reset_AlarmCount();
         }
     }
