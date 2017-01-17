@@ -1,12 +1,15 @@
-#ifndef USER_MAIN_BLUETOOTH_H_
-#define USER_MAIN_BLUETOOTH_H_
+/*
+ * bluetooth.h
+ *
+ *  Created on: 2017/01/15
+ *      Author: kky
+ */
 
-
+#ifndef _USER_BLUETOOTH_H_
+#define _USER_BLUETOOTH_H_
 
 void app_bluetooth_thread(void *data);
 
 
-
-
-#endif/*USER_MAIN_BLUETOOTH_H_*/
+#endif/*_USER_BLUETOOTH_H_*/
 

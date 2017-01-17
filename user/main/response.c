@@ -31,6 +31,7 @@
 #include "mem.h"
 #include "modem.h"
 #include "data.h"
+#include "telecontrol.h"
 
 int cmd_Login_rsp(const void* msg)
 {
@@ -236,6 +237,7 @@ int cmd_SetServer_rsp(const void* msg)
         rsp->managerSeq = req->managerSeq;
         socket_sendDataDirectly(rsp, sizeof(MSG_SET_SERVER_RSP));
     }
+    return 0;
 }
 
 int cmd_Battery_rsp(const void* msg)

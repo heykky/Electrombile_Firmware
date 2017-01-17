@@ -13,6 +13,6 @@ void telecontrol_unlock(void);
 void telecontrol_switch_off(void);
 void telecontrol_switch_on(void);
 
-int telecontrol_getSwitchState(void);
+EatGpioLevel_enum telecontrol_getSwitchState(void);
 
 #endif/*__TELECONTROL_H__*/

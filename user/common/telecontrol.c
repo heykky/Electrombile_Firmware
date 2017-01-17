@@ -94,7 +94,7 @@ void telecontrol_unlock(void)
 /*
 *function: 获取电门开关状态
 */
-int telecontrol_getSwitchState(void)
+EatGpioLevel_enum telecontrol_getSwitchState(void)
 {
     return eat_gpio_read(EAT_PIN60_COL2);
 }

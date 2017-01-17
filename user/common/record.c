@@ -4,7 +4,9 @@
  *  Created on: 2017/01/04
  *      Author: lc
  */
+#include <stdio.h>
 #include <string.h>
+
 #include "modem.h"
 #include "protocol.h"
 #include "fs.h"

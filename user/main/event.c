@@ -28,6 +28,9 @@
 #include "msg_queue.h"
 #include "mem.h"
 #include "ftp.h"
+#include "audio_source.h"
+#include "seek.h"
+#include "record.h"
 
 typedef int (*EVENT_FUNC)(const EatEvent_st* event);
 typedef struct
@@ -120,6 +123,14 @@ static int event_adc(const EatEvent_st* event)
 
     return 0;
 }
+
+static int event_aud_play_finish(const EatEvent_st* event)
+{
+    LOG_DEBUG("EAT_EVENT_AUD_PLAY_FINISH_IND happen");
+    audio_stopSound();
+    return 0;
+}
+
 
 static void sendGPS2Server(LOCAL_GPS* gps)
 {
@@ -467,6 +478,7 @@ static EVENT_PROC eventProcs[] =
     {EAT_EVENT_UART_SEND_COMPLETE,  EAT_NULL},
     {EAT_EVENT_USER_MSG,            event_threadMsg},
     {EAT_EVENT_ADC,                 event_adc},
+    {EAT_EVENT_AUD_PLAY_FINISH_IND, event_aud_play_finish}
 };
 
 

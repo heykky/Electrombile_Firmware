@@ -60,6 +60,7 @@ typedef struct
     eat_bool isBatteryJudging;
 
     //bluetooth id
+    eat_bool BluetoothSwitch;
     char BluetoothId[BLUETOOTH_ID_LEN];
 
 }SETTING;
@@ -85,6 +86,8 @@ unsigned char get_batterytype_Judging(void);
 eat_bool get_battery_isJudging(void);
 void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype);
 void set_bluetooth_id(const char* BluetoothIdString);
+void set_bluetooth_switch(eat_bool sw);
+eat_bool is_bluetoothOn(void);
 
 
 eat_bool setting_restore(void);

@@ -9,10 +9,13 @@
 #include <string.h>
 
 #include <eat_interface.h>
+#include <eat_fs.h>
 #include "cJSON.h"
 
 #include "client.h"
 #include "socket.h"
+#include "fs.h"
+#include "ftp.h"
 #include "msg.h"
 #include "log.h"
 #include "uart.h"
@@ -24,6 +27,8 @@
 #include "device.h"
 #include "record.h"
 #include "protocol.h"
+#include "telecontrol.h"
+#include "audio_source.h"
 
 enum
 {
@@ -39,6 +44,9 @@ enum
     DEVICE_STOP_RECORD       = 9,
     DEVICE_SET_BLUETOOTHID   = 10,
     DEVICE_DOWNLOAD_AUDIOFILE= 12,
+    DEVICE_SET_BLUETOOTHSW   = 13,
+    DEVICE_START_ALARM       = 14,
+    DEVICE_CONTROL_LOCK      = 15,
 }DEVICE_CMD_NAME;
 
 typedef int (*DEVICE_PROC)(const void*, cJSON*);
@@ -151,6 +159,11 @@ static int device_SetBluetoothId(const void* req, cJSON *param)
     MSG_THREAD *msg = NULL;
 
     msg = allocMsg(msgLen);
+    if(!msg)
+    {
+        return device_responseERROR(req);
+    }
+
     msg->cmd = CMD_THREAD_BLUETOOTHRESET;
     msg->length = 0;
 
@@ -176,16 +189,67 @@ static int device_DownloadAudioFile(const void* req, cJSON *param)
         return device_responseERROR(req);
     }
     use = cJSON_GetObjectItem(param, "use");
-    fileName = cJSON_GetObjectItem(param, "fileName");
-    strncpy(fileNameString, fileName->valuestring,32);
     if(use->valueint == 0)
     {
+        fileName = cJSON_GetObjectItem(param, "fileName");
+        strncpy(fileNameString, fileName->valuestring,32);
         ftp_download_file("close_audio.amr", fileNameString);
     }
     else if(use->valueint == 1)
     {
+        fileName = cJSON_GetObjectItem(param, "fileName");
+        strncpy(fileNameString, fileName->valuestring,32);
         ftp_download_file("far_audio.amr", fileNameString);
     }
+    else if(use->valueint == 3)
+    {
+        eat_fs_Delete(AUDIO_FILE_NAME_FOUND);
+        eat_fs_Delete(AUDIO_FILE_NAME_LOST);
+    }
+    return device_responseOK(req);
+}
+
+static int device_SetBlutoothSwitch(const void* req, cJSON *param)
+{
+    cJSON *bluetoothSwitch = NULL;
+
+    if(!param)
+    {
+        return device_responseERROR(req);
+    }
+
+    bluetoothSwitch = cJSON_GetObjectItem(param, "sw");
+    set_bluetooth_switch(bluetoothSwitch->valueint?EAT_TRUE:EAT_FALSE);
+
+    return device_responseOK(req);
+}
+
+static int device_StartAlarm(const void* req, cJSON *param)
+{
+    audio_StartAlarmSound();
+
+    return device_responseOK(req);
+}
+
+static int device_ControlCarLocked(const void* req, cJSON *param)
+{
+    cJSON *Switch = NULL;
+
+    if(!param)
+    {
+        return device_responseERROR(req);
+    }
+
+    Switch = cJSON_GetObjectItem(param, "sw");
+    if(1 == Switch->valueint)
+    {
+        telecontrol_lock();
+    }
+    else
+    {
+        telecontrol_unlock();
+    }
+
     return device_responseOK(req);
 }
 
@@ -202,7 +266,10 @@ static DEVICE_MSG_PROC deviceProcs[] =
     {DEVICE_START_RECORD,      device_StartRecord},
     {DEVICE_STOP_RECORD,       device_StopRecord},
     {DEVICE_SET_BLUETOOTHID,   device_SetBluetoothId},
-    {DEVICE_DOWNLOAD_AUDIOFILE,device_DownloadAudioFile}
+    {DEVICE_DOWNLOAD_AUDIOFILE,device_DownloadAudioFile},
+    {DEVICE_SET_BLUETOOTHSW,   device_SetBlutoothSwitch},
+    {DEVICE_START_ALARM,       device_StartAlarm},
+    {DEVICE_CONTROL_LOCK,      device_ControlCarLocked}
 };
 
 int cmd_device_handler(const void* msg)
