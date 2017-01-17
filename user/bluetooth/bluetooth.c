@@ -38,7 +38,7 @@ static void bluetooth_resetState(void)
 */
 static int bluetooth_checkId(u8* buf)
 {
-    if(strstr((const char *) buf, "+BTSCAN: 0") && strstr(buf,setting.BluetoothId))
+    if(strstr((const char *)buf, "+BTSCAN: 0") && strstr((const char *)buf,setting.BluetoothId))
     {
         LOG_DEBUG("PASS");
         isBluetoothInRange_now = EAT_TRUE;
@@ -67,20 +67,22 @@ static void bluetooth_scanResultProc(void)
     isBluetoothInRange_now = EAT_FALSE;
 }
 
-static void bluetooth_timerHandler(void)
+static void bluetooth_scanProc(void)
 {
     static int time = 0;
+    static eat_bool isFirst = EAT_TRUE;
 
     time++;
 
-    if(time == 10)
+    if(time == 10 && !isFirst)
     {
-        modem_AT("AT+BTSCAN=0" CR);//stop
+        modem_AT("AT+BTSCAN=0" CR);//stop scan
     }
     if(time == 12)
     {
+        isFirst = EAT_FALSE;
         bluetooth_scanResultProc();
-        modem_AT("AT+BTSCAN=1,10" CR);//start
+        modem_AT("AT+BTSCAN=1,10" CR);//start scan
         time = 0;
     }
 }
@@ -97,6 +99,14 @@ static void bluetooth_mod_ready_rd(void)
     }
 }
 
+static void bluetooth_onesecondLoop(void)
+{
+    if(is_bluetoothOn())
+    {
+        bluetooth_scanProc();
+    }
+}
+
 void app_bluetooth_thread(void *data)
 {
     EatEvent_st event;
@@ -106,8 +116,8 @@ void app_bluetooth_thread(void *data)
 
     modem_AT("AT+BTPOWER=1" CR);
 
-    LOG_INFO("TIMER_BLUETOOTH_SCAN start.");
-    eat_timer_start(TIMER_BLUETOOTH_SCAN, BLUETOOTH_TIMER_PERIOD);
+    LOG_INFO("TIMER_BLUETOOTH start.");
+    eat_timer_start(TIMER_BLUETOOTH, BLUETOOTH_TIMER_PERIOD);
 
     while(EAT_TRUE)
 	{
@@ -117,11 +127,8 @@ void app_bluetooth_thread(void *data)
             case EAT_EVENT_TIMER:
                 switch (event.data.timer.timer_id)
                 {
-                    case TIMER_BLUETOOTH_SCAN:
-                        if(is_bluetoothOn())
-                        {
-                            bluetooth_timerHandler();
-                        }
+                    case TIMER_BLUETOOTH:
+                        bluetooth_onesecondLoop();
                         eat_timer_start(event.data.timer.timer_id, BLUETOOTH_TIMER_PERIOD);
                         break;
 
