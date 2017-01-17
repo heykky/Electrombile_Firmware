@@ -12,6 +12,7 @@
 #include "log.h"
 #include "timer.h"
 #include "modem.h"
+#include "flash.h"
 #include "thread.h"
 #include "setting.h"
 #include "bluetooth.h"
@@ -19,6 +20,7 @@
 #include "audio_source.h"
 
 #define BLUETOOTH_SCAN_PERIOD (20 * 1000) // 20s for once
+#define FILESIZE_SPACE 4
 
 static eat_bool isBluetoothInRange_now = EAT_FALSE;
 static eat_bool isBluetoothInRange_pre = EAT_FALSE;
@@ -51,11 +53,144 @@ static int bluetooth_checkId(u8* buf)
     return 0;
 }
 
+static int bluetooth_writeFileToFlash(u8* buf)
+{
+    if(strstr((const char *) buf, "FTPGETTOFS: 0"))
+    {
+        FS_HANDLE fh;
+        int rc = 0;
+        UINT filesize = 0;
+        u8* audiodata = NULL;
+        eat_bool filetype = EAT_FALSE;
+
+        fh = eat_fs_Open(AUDIO_FILE_NAME_FOUND, FS_READ_ONLY);
+
+        if(fh == EAT_FS_FILE_NOT_FOUND)
+        {
+            fh = eat_fs_Open(AUDIO_FILE_NAME_LOST, FS_READ_ONLY);
+            if(fh == EAT_FS_FILE_NOT_FOUND)
+            {
+                LOG_DEBUG("audio file not exists.");
+                return -1;
+            }
+            filetype = EAT_TRUE;
+        }
+
+        if(fh < EAT_FS_NO_ERROR)
+        {
+            LOG_DEBUG("open file failed, eat_fs_Open return %d!", fh);
+            return -1;
+        }
+
+        rc = eat_fs_GetFileSize(fh, &filesize);
+
+        if (rc < EAT_FS_NO_ERROR)
+        {
+            LOG_DEBUG("get filesize failed, eat_fs_GetFileSize return %d", rc);
+            eat_fs_Close(fh);
+            return -1;
+        }
+
+        audiodata = allocMsg(filesize);
+
+        rc = eat_fs_Read(fh, audiodata, filesize, NULL);
+
+        if (rc < EAT_FS_NO_ERROR)
+        {
+            LOG_DEBUG("read file failed, eat_fs_Read return %d", rc);
+            freeMsg(audiodata);
+            eat_fs_Close(fh);
+            return -1;
+        }
+
+        if(filetype == EAT_FALSE)
+        {
+            if(!eat_flash_erase((const u8*)BTAUDIO_NEAR_OFFSET, 25 * 1024))
+            {
+                LOG_DEBUG("erase flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write filesize to flash
+            if(!eat_flash_write((const u8*)BTAUDIO_NEAR_OFFSET, &filesize, FILESIZE_SPACE))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write audiodata to flash
+            if(!eat_flash_write((const u8*)BTAUDIO_NEAR_OFFSET + FILESIZE_SPACE, audiodata, filesize))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            eat_fs_Close(fh);
+            eat_fs_Delete(AUDIO_FILE_NAME_FOUND);
+        }
+
+        if(filetype == EAT_TRUE)
+        {
+            if(!eat_flash_erase((const u8*)BTAUDIO_AWAY_OFFSET, 25 * 1024))
+            {
+                LOG_DEBUG("erase flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write filesize to flash
+            if(!eat_flash_write((const u8*)BTAUDIO_AWAY_OFFSET, &filesize, FILESIZE_SPACE))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write audiodata to flash
+            if(!eat_flash_write((const u8*)BTAUDIO_AWAY_OFFSET + FILESIZE_SPACE, audiodata, filesize))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            eat_fs_Close(fh);
+            eat_fs_Delete(AUDIO_FILE_NAME_LOST);
+        }
+
+        freeMsg(audiodata);
+        set_isWriteToFlash(EAT_TRUE);
+        LOG_DEBUG("write flash OK");
+
+    }
+    return 0;
+}
+
 static void bluetooth_scanHandler(void)
 {
+    modem_AT("AT+BTSCAN=0" CR);
     //event when bluetooth is found
     if(isBluetoothInRange_now && !isBluetoothInRange_pre)
     {
+        /*
+        if(isWriteToFlash())
+        {
+            UINT filesize;
+            u8* audiodata = NULL;
+            eat_flash_read(&filesize, (const u8*)BTAUDIO_NEAR_OFFSET, FILESIZE_SPACE);
+            audiodata = allocMsg(filesize);
+            eat_flash_read(audiodata, (const u8*)BTAUDIO_NEAR_OFFSET + FILESIZE_SPACE, filesize);
+            eat_audio_play_data(audiodata, filesize, EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+            //remember to free when play finish
+        }
+        else
+        {
+            eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+        }
+        */
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_FOUND, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
         {
             eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
@@ -65,6 +200,22 @@ static void bluetooth_scanHandler(void)
     //event when bluetooth is lost
     if(!isBluetoothInRange_now && isBluetoothInRange_pre)
     {
+        /*
+        if(get_isWriteToFlash())
+        {
+            UINT filesize;
+            u8* audiodata = NULL;
+            eat_flash_read(&filesize, (const u8*)BTAUDIO_AWAY_OFFSET, FILESIZE_SPACE);
+            audiodata = allocMsg(filesize);
+            eat_flash_read(audiodata, (const u8*)BTAUDIO_AWAY_OFFSET + FILESIZE_SPACE, filesize);
+            eat_audio_play_data(audiodata, filesize, EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+            //remember to free when play finish
+        }
+        else
+        {
+            eat_audio_play_data(audio_defaultAudioSource_found(), audio_sizeofDefaultAudioSource_found(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
+        }
+        */
         if(MED_AUDIO_SUCCESS != eat_audio_play_file(AUDIO_FILE_NAME_LOST, EAT_FALSE, NULL, 15, EAT_AUDIO_PATH_SPK1))
         {
             eat_audio_play_data(audio_defaultAudioSource_lost(), audio_sizeofDefaultAudioSource_lost(), EAT_AUDIO_FORMAT_AMR, EAT_AUDIO_PLAY_ONCE, 15, EAT_AUDIO_PATH_SPK1);
@@ -74,7 +225,10 @@ static void bluetooth_scanHandler(void)
     isBluetoothInRange_pre = isBluetoothInRange_now;
     isBluetoothInRange_now = EAT_FALSE;
 
-    modem_AT("AT+BTSCAN=1,10" CR);
+    if(isBluetoothOn())
+    {
+        modem_AT("AT+BTSCAN=1,10" CR);
+    }
 }
 
 static void bluetooth_stopSound(void)
@@ -96,6 +250,7 @@ static void bluetooth_mod_ready_rd(void)
         LOG_DEBUG("modem recv: %s", buf);
 
         bluetooth_checkId(buf);
+        bluetooth_writeFileToFlash(buf);
     }
 }
 

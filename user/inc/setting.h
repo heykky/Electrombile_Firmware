@@ -59,8 +59,10 @@ typedef struct
     u8 BaterryType_Judging;
     eat_bool isBatteryJudging;
 
-    //bluetooth id
+    //bluetooth
     char BluetoothId[BLUETOOTH_ID_LEN];
+    eat_bool isAudioWriteToFlash;
+    eat_bool isBluetoothOn;
 
 }SETTING;
 
@@ -85,6 +87,11 @@ unsigned char get_batterytype_Judging(void);
 eat_bool get_battery_isJudging(void);
 void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype);
 void set_bluetooth_id(const char* BluetoothIdString);
+void set_isWriteToFlash(eat_bool isWriteToFlash);
+eat_bool isWriteToFlash(void);
+void set_isBluetoothOn(eat_bool isBluetoothOn);
+eat_bool isBluetoothOn(void);
+
 
 
 eat_bool setting_restore(void);

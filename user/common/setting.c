@@ -65,6 +65,8 @@ SETTING setting;
 #define TAG_VIBRATE "defendstate"
 
 #define TAG_BLUETOOTH_ID "bluetoothId"
+#define TAG_IS_WRITETOFLASH "isWriteToFlash"
+#define TAG_IS_BLUETOOTHON "isBluetoothOn"
 #define TAG_BLUETOOTH "bluetooth"
 
 //the setting file format is as follow
@@ -143,7 +145,7 @@ static void setting_initial(void)
     regist_cmd(CMD_STRING_SERVER, setting_changeServer);//register the debug command
 
     /* Server configuration */
-#if 1
+#if 0
     setting.addr_type = ADDR_TYPE_DOMAIN;
     strncpy(setting.domain, "www.xiaoan110.com",MAX_DOMAIN_NAME_LEN);
 #else
@@ -151,10 +153,10 @@ static void setting_initial(void)
     setting.ipaddr[0] = 118;
     setting.ipaddr[1] = 89;
     setting.ipaddr[2] = 104;
-    setting.ipaddr[3] = 30;
+    setting.ipaddr[3] = 130;
 #endif
 
-    strncpy(setting.ftp_domain, "www.xiaoan110.com", MAX_DOMAIN_NAME_LEN);
+    strncpy(setting.ftp_domain, "test.xiaoan110.com", MAX_DOMAIN_NAME_LEN);
     setting.port = 9880;
 
     /* Timer configuration */
@@ -178,6 +180,8 @@ static void setting_initial(void)
     setting.isBatteryJudging = EAT_FALSE;
 
     strncpy(setting.BluetoothId, "00:00:00:00:00:00",BLUETOOTH_ID_LEN);
+    setting.isAudioWriteToFlash = EAT_FALSE;
+    setting.isBluetoothOn = EAT_TRUE;
 
     return;
 }
@@ -259,9 +263,29 @@ void set_bluetooth_id(const char* BluetoothIdString)
 {
     strncpy(setting.BluetoothId, BluetoothIdString, BLUETOOTH_ID_LEN);
     setting_save();
-    LOG_DEBUG("SET BLUETOOTH ID OK\n");
 }
 
+void set_isWriteToFlash(eat_bool isWriteToFlash)
+{
+    setting.isAudioWriteToFlash = isWriteToFlash;
+    setting_save();
+}
+
+eat_bool get_isWriteToFlash(void)
+{
+    return setting.isAudioWriteToFlash;
+}
+
+void set_isBluetoothOn(eat_bool isBluetoothOn)
+{
+    setting.isBluetoothOn = isBluetoothOn;
+    setting_save();
+}
+
+eat_bool get_isBluetoothOn(void)
+{
+    return setting.isBluetoothOn;
+}
 
 eat_bool setting_restore(void)
 {
@@ -409,8 +433,10 @@ eat_bool setting_restore(void)
     if(bluetooth)
     {
         char *BluetoothId = cJSON_GetObjectItem(bluetooth, TAG_BLUETOOTH_ID)->valuestring;
-        LOG_DEBUG("restore bluetooth conf");
         strncpy(setting.BluetoothId, BluetoothId, BLUETOOTH_ID_LEN);
+        setting.isBluetoothOn = cJSON_GetObjectItem(bluetooth, TAG_IS_BLUETOOTHON)->valueint ? EAT_TRUE : EAT_FALSE;
+        setting.isAudioWriteToFlash = cJSON_GetObjectItem(bluetooth, TAG_IS_WRITETOFLASH)->valueint ? EAT_TRUE : EAT_FALSE;
+        LOG_DEBUG("restore bluetooth conf");
     }
 
     free(buf);
@@ -465,11 +491,10 @@ eat_bool setting_save(void)
     cJSON_AddNumberToObject(defend_state, TAG_IS_VIBRATEFIXED, setting.isVibrateFixed);
     cJSON_AddItemToObject(root, TAG_VIBRATE, defend_state);
 
-    if(strcmp(setting.BluetoothId,"00:00:00:00:00:00")!=0)
-    {
-        cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
-        cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
-    }
+    cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
+    cJSON_AddNumberToObject(bluetooth, TAG_IS_BLUETOOTHON, setting.isBluetoothOn);
+    cJSON_AddNumberToObject(bluetooth, TAG_IS_WRITETOFLASH, setting.isAudioWriteToFlash);
+    cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
 
     content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less
 
