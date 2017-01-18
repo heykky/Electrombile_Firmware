@@ -62,6 +62,7 @@ static void bluetooth_mod_ready_rd(void)
         LOG_DEBUG("modem recv: %s", buf);
 
         bluetooth_checkId(buf);
+        audio_writeFileToFlash(buf);
     }
 }
 

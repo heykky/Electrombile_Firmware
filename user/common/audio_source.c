@@ -413,108 +413,112 @@ int audio_stopSound_flash(void)
     return 0;
 }
 
-int audio_writeFileToFlash(void)
+int audio_writeFileToFlash(u8* buf)
 {
-    FS_HANDLE fh;
-    int rc = 0;
-    UINT filesize = 0;
-    u8* audiodata = NULL;
-    eat_bool filetype = EAT_FALSE;
-    u32 flashAddress = eat_get_app_base_addr();
-
-    fh = eat_fs_Open(AUDIO_FILE_NAME_FOUND, FS_READ_ONLY);
-    if(fh != EAT_FS_NO_ERROR)
+    if(strstr((const char *)buf, "+FTPGETTOFS:"))
     {
+        FS_HANDLE fh;
+        int rc = 0;
+        UINT filesize = 0;
+        u8* audiodata = NULL;
+        eat_bool filetype = EAT_FALSE;
+        u32 flashAddress = eat_get_app_base_addr();
+
         fh = eat_fs_Open(AUDIO_FILE_NAME_FOUND, FS_READ_ONLY);
-        if(fh != EAT_FS_NO_ERROR)
+        if(fh < EAT_FS_NO_ERROR)
         {
+            fh = eat_fs_Open(AUDIO_FILE_NAME_FOUND, FS_READ_ONLY);
+            if(fh < EAT_FS_NO_ERROR)
+            {
+                LOG_DEBUG("open file failed, eat_fs_Open return %d", fh);
+                return -1;
+            }
+            filetype = EAT_TRUE;
+        }
+
+        rc = eat_fs_GetFileSize(fh, &filesize);
+        if (rc < EAT_FS_NO_ERROR)
+        {
+            LOG_DEBUG("get filesize failed, eat_fs_GetFileSize return %d", rc);
+            eat_fs_Close(fh);
             return -1;
         }
-        filetype = EAT_TRUE;
-    }
 
-    rc = eat_fs_GetFileSize(fh, &filesize);
-    if (rc < EAT_FS_NO_ERROR)
-    {
-        LOG_DEBUG("get filesize failed, eat_fs_GetFileSize return %d", rc);
-        eat_fs_Close(fh);
-        return -1;
-    }
+        audiodata = allocMsg(filesize);
 
-    audiodata = allocMsg(filesize);
+        rc = eat_fs_Read(fh, audiodata, filesize, NULL);
+        if (rc < EAT_FS_NO_ERROR)
+        {
+            LOG_DEBUG("read file failed, eat_fs_Read return %d", rc);
+            freeMsg(audiodata);
+            eat_fs_Close(fh);
+            return -1;
+        }
 
-    rc = eat_fs_Read(fh, audiodata, filesize, NULL);
-    if (rc < EAT_FS_NO_ERROR)
-    {
-        LOG_DEBUG("read file failed, eat_fs_Read return %d", rc);
+        if(filetype == EAT_FALSE)
+        {
+            //erase flash
+            if(!eat_flash_erase((void*)(flashAddress + BTAUDIO_NEAR_OFFSET), 25600))
+            {
+                LOG_DEBUG("erase flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write filesize to flash
+            if(!eat_flash_write((void*)(flashAddress + BTAUDIO_NEAR_OFFSET), &filesize, FILESIZE_SPACE))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write audiodata to flash
+            if(!eat_flash_write((void*)(flashAddress + BTAUDIO_NEAR_OFFSET + FILESIZE_SPACE), audiodata, filesize))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            eat_fs_Close(fh);
+            eat_fs_Delete(AUDIO_FILE_NAME_FOUND);
+            set_isWriteToFlash_near(EAT_TRUE);
+        }
+
+        if(filetype == EAT_TRUE)
+        {
+            if(!eat_flash_erase((void*)(flashAddress + BTAUDIO_AWAY_OFFSET), 25600))
+            {
+                LOG_DEBUG("erase flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write filesize to flash
+            if(!eat_flash_write((void*)(flashAddress + BTAUDIO_AWAY_OFFSET), &filesize, FILESIZE_SPACE))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            //write audiodata to flash
+            if(!eat_flash_write((void*)(flashAddress + BTAUDIO_AWAY_OFFSET + FILESIZE_SPACE), audiodata, filesize))
+            {
+                LOG_DEBUG("write flash failed");
+                freeMsg(audiodata);
+                eat_fs_Close(fh);
+                return -1;
+            }
+            eat_fs_Close(fh);
+            eat_fs_Delete(AUDIO_FILE_NAME_LOST);
+            set_isWriteToFlash_away(EAT_TRUE);
+        }
+
         freeMsg(audiodata);
-        eat_fs_Close(fh);
-        return -1;
+        LOG_DEBUG("write flash OK");
     }
-
-    if(filetype == EAT_FALSE)
-    {
-        //erase flash
-        if(!eat_flash_erase((void*)(flashAddress + BTAUDIO_NEAR_OFFSET), 25600))
-        {
-            LOG_DEBUG("erase flash failed");
-            freeMsg(audiodata);
-            eat_fs_Close(fh);
-            return -1;
-        }
-        //write filesize to flash
-        if(!eat_flash_write((void*)(flashAddress + BTAUDIO_NEAR_OFFSET), &filesize, FILESIZE_SPACE))
-        {
-            LOG_DEBUG("write flash failed");
-            freeMsg(audiodata);
-            eat_fs_Close(fh);
-            return -1;
-        }
-        //write audiodata to flash
-        if(!eat_flash_write((void*)(flashAddress + BTAUDIO_NEAR_OFFSET + FILESIZE_SPACE), audiodata, filesize))
-        {
-            LOG_DEBUG("write flash failed");
-            freeMsg(audiodata);
-            eat_fs_Close(fh);
-            return -1;
-        }
-        eat_fs_Close(fh);
-        eat_fs_Delete(AUDIO_FILE_NAME_FOUND);
-        set_isWriteToFlash_near(EAT_TRUE);
-    }
-
-    if(filetype == EAT_TRUE)
-    {
-        if(!eat_flash_erase((void*)(flashAddress + BTAUDIO_AWAY_OFFSET), 25600))
-        {
-            LOG_DEBUG("erase flash failed");
-            freeMsg(audiodata);
-            eat_fs_Close(fh);
-            return -1;
-        }
-        //write filesize to flash
-        if(!eat_flash_write((void*)(flashAddress + BTAUDIO_AWAY_OFFSET), &filesize, FILESIZE_SPACE))
-        {
-            LOG_DEBUG("write flash failed");
-            freeMsg(audiodata);
-            eat_fs_Close(fh);
-            return -1;
-        }
-        //write audiodata to flash
-        if(!eat_flash_write((void*)(flashAddress + BTAUDIO_AWAY_OFFSET + FILESIZE_SPACE), audiodata, filesize))
-        {
-            LOG_DEBUG("write flash failed");
-            freeMsg(audiodata);
-            eat_fs_Close(fh);
-            return -1;
-        }
-        eat_fs_Close(fh);
-        eat_fs_Delete(AUDIO_FILE_NAME_LOST);
-        set_isWriteToFlash_away(EAT_TRUE);
-    }
-
-    freeMsg(audiodata);
-    LOG_DEBUG("write flash OK");
 
     return 0;
 }

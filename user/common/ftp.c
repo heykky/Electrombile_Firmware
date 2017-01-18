@@ -1,3 +1,4 @@
+
 /*
  * ftp.c
  *
@@ -14,6 +15,7 @@
 #include "thread_msg.h"
 #include "thread.h"
 #include "setting.h"
+#include "audio_source.h"
 
 #define MAX_LOCALFILENAME_LEN 32
 #define MAX_FTPCMD_LEN 64
@@ -225,7 +227,6 @@ static void ftp_get_end(u8 * buf)
     if(strstr((const char *)buf, "FTPGETTOFS: 0"))
     {
         LOG_DEBUG("get file OK");
-        audio_writeFileToFlash();
         ftp_sendMsg2Event(FTP_SUCCESS);
     }
     else

@@ -5,7 +5,7 @@ int audio_StartAlarmSound(void);
 int audio_bluetoothFoundSound(void);
 int audio_bluetoothLostSound(void);
 int audio_stopSound(void);
-int audio_writeFileToFlash(void);
+int audio_writeFileToFlash(u8* buf);
 int audio_bluetoothFoundSound_flash(void);
 int audio_stopSound_flash(void);
 
