@@ -67,6 +67,10 @@ SETTING setting;
 #define TAG_BLUETOOTH "bluetooth"
 #define TAG_BLUETOOTH_ID "bluetoothId"
 #define TAG_BLUETOOTH_SWICTH  "bluetoothswitch"
+#define TAG_IS_WRITETOFLASH_NEAR "isWriteToFlash_near"
+#define TAG_IS_WRITETOFLASH_AWAY "isWriteToFlash_away"
+
+
 
 
 static int setting_changeServer(const unsigned char* cmdString, unsigned short length)
@@ -166,7 +170,9 @@ static void setting_initial(void)
     setting.isBatteryJudging = EAT_FALSE;
 
     setting.BluetoothSwitch = EAT_TRUE;
-    strncpy(setting.BluetoothId, "10:2a:b3:73:2b:b8,-83", BLUETOOTH_ID_LEN);
+    setting.isWriteToFlash_near = EAT_FALSE;
+    setting.isWriteToFlash_away = EAT_TRUE;
+    strncpy(setting.BluetoothId, "10:2a:b3:73:2b:b8", BLUETOOTH_ID_LEN);
 
     return;
 }
@@ -261,6 +267,28 @@ void set_bluetooth_switch(eat_bool sw)
 eat_bool is_bluetoothOn(void)
 {
     return setting.BluetoothSwitch;
+}
+
+void set_isWriteToFlash_near(eat_bool isWriteToFlash)
+{
+    setting.isWriteToFlash_near = isWriteToFlash;
+    setting_save();
+}
+
+eat_bool is_writeToFlash_near(void)
+{
+    return setting.isWriteToFlash_near;
+}
+
+void set_isWriteToFlash_away(eat_bool isWriteToFlash)
+{
+    setting.isWriteToFlash_away = isWriteToFlash;
+    setting_save();
+}
+
+eat_bool is_writeToFlash_away(void)
+{
+    return setting.isWriteToFlash_away;
 }
 
 eat_bool setting_restore(void)
@@ -412,6 +440,8 @@ eat_bool setting_restore(void)
         LOG_DEBUG("restore bluetooth conf");
         strncpy(setting.BluetoothId, BluetoothId, BLUETOOTH_ID_LEN);
         setting.BluetoothSwitch = cJSON_GetObjectItem(bluetooth, TAG_BLUETOOTH_SWICTH)->valueint ? EAT_TRUE : EAT_FALSE;
+        setting.isWriteToFlash_near = cJSON_GetObjectItem(bluetooth, TAG_IS_WRITETOFLASH_NEAR)->valueint ? EAT_TRUE :EAT_FALSE;
+        setting.isWriteToFlash_away = cJSON_GetObjectItem(bluetooth, TAG_IS_WRITETOFLASH_AWAY)->valueint ? EAT_TRUE :EAT_FALSE;
     }
 
     free(buf);
@@ -468,6 +498,8 @@ eat_bool setting_save(void)
 
     cJSON_AddStringToObject(bluetooth, TAG_BLUETOOTH_ID, setting.BluetoothId);
     cJSON_AddNumberToObject(bluetooth, TAG_BLUETOOTH_SWICTH, setting.BluetoothSwitch);
+    cJSON_AddNumberToObject(bluetooth, TAG_IS_WRITETOFLASH_NEAR, setting.isWriteToFlash_near);
+    cJSON_AddNumberToObject(bluetooth, TAG_IS_WRITETOFLASH_AWAY, setting.isWriteToFlash_away);
     cJSON_AddItemToObject(root, TAG_BLUETOOTH, bluetooth);
 
     content = cJSON_PrintUnformatted(root);// PrintUnformatted use space less

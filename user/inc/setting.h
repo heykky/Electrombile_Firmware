@@ -62,6 +62,8 @@ typedef struct
     //bluetooth id
     eat_bool BluetoothSwitch;
     char BluetoothId[BLUETOOTH_ID_LEN];
+    eat_bool isWriteToFlash_near;
+    eat_bool isWriteToFlash_away;
 
 }SETTING;
 
@@ -88,6 +90,11 @@ void set_battery_isJudging(eat_bool isBatteryJudging, u8 baterrytype);
 void set_bluetooth_id(const char* BluetoothIdString);
 void set_bluetooth_switch(eat_bool sw);
 eat_bool is_bluetoothOn(void);
+void set_isWriteToFlash_near(eat_bool isWriteToFlash);
+eat_bool is_writeToFlash_near(void);
+void set_isWriteToFlash_away(eat_bool isWriteToFlash);
+eat_bool is_writeToFlash_away(void);
+
 
 
 eat_bool setting_restore(void);

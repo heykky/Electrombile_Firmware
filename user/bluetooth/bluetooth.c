@@ -17,9 +17,12 @@
 #include "setting.h"
 #include "bluetooth.h"
 #include "thread_msg.h"
+#include "telecontrol.h"
 #include "audio_source.h"
 
+
 #define BLUETOOTH_TIMER_PERIOD (1 * 1000) // 1s for once
+
 
 static eat_bool isHostAtNear = EAT_FALSE;
 static eat_bool isBluetoothFound = EAT_FALSE;
@@ -43,7 +46,7 @@ static int bluetooth_checkId(u8* buf)
         {
             isHostAtNear = EAT_TRUE;
             telecontrol_switch_on();
-            audio_bluetoothFoundSound();
+            audio_bluetoothFoundSound_flash();
         }
         isBluetoothFound = EAT_TRUE;
     }
@@ -97,7 +100,7 @@ static void bluetooth_onesecondLoop(void)
 
     time++;
 
-    if(is_bluetoothOn() && !Vibration_isMoved)
+    if(is_bluetoothOn() && !Vibration_isMoved())
     {
         bluetooth_ScanProc(time);
     }
@@ -157,7 +160,7 @@ void app_bluetooth_thread(void *data)
             case EAT_EVENT_AUD_PLAY_FINISH_IND:
                 {
                    LOG_DEBUG("EAT_EVENT_AUD_PLAY_FINISH_IND happen");
-                   audio_stopSound();
+                   audio_stopSound_flash();
                 }
                 break;
 
